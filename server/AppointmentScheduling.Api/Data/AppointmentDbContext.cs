@@ -31,6 +31,29 @@ public class AppointmentDbContext : DbContext
 
             entity.Property(clinician => clinician.IsActive)
                 .HasDefaultValue(true);
+
+            entity.HasData(
+                new Clinician
+                {
+                    ClinicianId = 1,
+                    Name = "Dr Maya Patel",
+                    Role = "General Practitioner",
+                    IsActive = true
+                },
+                new Clinician
+                {
+                    ClinicianId = 2,
+                    Name = "Dr Daniel Brooks",
+                    Role = "General Practitioner",
+                    IsActive = true
+                },
+                new Clinician
+                {
+                    ClinicianId = 3,
+                    Name = "Dr Sofia Ahmed",
+                    Role = "General Practitioner",
+                    IsActive = false
+                });
         });
     }
 }

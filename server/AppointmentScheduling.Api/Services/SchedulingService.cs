@@ -43,7 +43,9 @@ public sealed class SchedulingService
             .Where(
                 slot =>
                     slot.StartsAtUtc >= effectiveFromUtc
-                    && slot.AvailabilitySession.Clinician.IsActive);
+                    && slot.AvailabilitySession.Clinician.IsActive
+                    && !slot.Bookings.Any(
+                        booking => booking.Status == BookingStatus.Active));
 
         if (toUtc is not null)
         {

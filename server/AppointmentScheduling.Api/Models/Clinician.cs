@@ -9,4 +9,7 @@ public class Clinician
     public string Role { get; set; } = string.Empty;
 
     public bool IsActive { get; set; } = true;
+
+    public ICollection<AvailabilitySession> AvailabilitySessions { get; set; }
+        = new List<AvailabilitySession>();
 }

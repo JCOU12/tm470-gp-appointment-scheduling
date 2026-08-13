@@ -18,6 +18,10 @@ public class AppointmentDbContext : DbContext
 
     public DbSet<AppointmentSlot> AppointmentSlots => Set<AppointmentSlot>();
 
+    public DbSet<Patient> Patients => Set<Patient>();
+
+    public DbSet<Booking> Bookings => Set<Booking>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -112,10 +116,10 @@ public class AppointmentDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasIndex(slot => new
-                {
-                    slot.AvailabilitySessionId,
-                    slot.StartsAtUtc
-                })
+            {
+                slot.AvailabilitySessionId,
+                slot.StartsAtUtc
+            })
                 .IsUnique();
 
             entity.ToTable(table =>
@@ -123,6 +127,62 @@ public class AppointmentDbContext : DbContext
                 table.HasCheckConstraint(
                     "CK_AppointmentSlots_TimeRange",
                     "\"EndsAtUtc\" > \"StartsAtUtc\"");
+            });
+        });
+
+        modelBuilder.Entity<Patient>(entity =>
+        {
+            entity.HasKey(patient => patient.PatientId);
+
+            entity.Property(patient => patient.Reference)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(patient => patient.DisplayName)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.HasIndex(patient => patient.Reference)
+                .IsUnique();
+        });
+
+        modelBuilder.Entity<Booking>(entity =>
+        {
+            entity.HasKey(booking => booking.BookingId);
+
+            entity.Property(booking => booking.Status)
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .IsRequired();
+
+            entity.Property(booking => booking.BookedAtUtc)
+                .IsRequired();
+
+            entity.HasOne(booking => booking.AppointmentSlot)
+                .WithMany(slot => slot.Bookings)
+                .HasForeignKey(booking => booking.AppointmentSlotId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(booking => booking.Patient)
+                .WithMany(patient => patient.Bookings)
+                .HasForeignKey(booking => booking.PatientId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(booking => booking.AppointmentSlotId)
+                .IsUnique()
+                .HasFilter("\"Status\" = 'Active'");
+
+            entity.HasIndex(booking => booking.PatientId);
+
+            entity.ToTable(table =>
+            {
+                table.HasCheckConstraint(
+                    "CK_Bookings_Status",
+                    "\"Status\" IN ('Active', 'Cancelled')");
+                table.HasCheckConstraint(
+                    "CK_Bookings_Cancellation",
+                    "(\"Status\" = 'Active' AND \"CancelledAtUtc\" IS NULL) "
+                    + "OR (\"Status\" = 'Cancelled' AND \"CancelledAtUtc\" IS NOT NULL)");
             });
         });
     }

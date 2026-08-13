@@ -11,4 +11,6 @@ public class AppointmentSlot
     public DateTime EndsAtUtc { get; set; }
 
     public AvailabilitySession AvailabilitySession { get; set; } = null!;
+
+    public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 }

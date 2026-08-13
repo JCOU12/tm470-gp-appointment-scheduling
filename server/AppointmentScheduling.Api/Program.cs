@@ -15,6 +15,7 @@ builder.Services.AddDbContext<AppointmentDbContext>(options =>
             "Connection string 'AppointmentDatabase' was not found.")));
 
 builder.Services.AddSingleton<AppointmentSlotGenerator>();
+builder.Services.AddScoped<AvailabilitySessionService>();
 
 builder.Services.AddOpenApi();
 

@@ -17,6 +17,7 @@ builder.Services.AddDbContext<AppointmentDbContext>(options =>
 builder.Services.AddSingleton<AppointmentSlotGenerator>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<AvailabilitySessionService>();
+builder.Services.AddScoped<BookingService>();
 builder.Services.AddScoped<SchedulingService>();
 
 builder.Services.AddOpenApi();

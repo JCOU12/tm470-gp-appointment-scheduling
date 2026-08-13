@@ -65,6 +65,44 @@ public sealed class AppointmentSlotsControllerTests
         Assert.Equal(UtcDateTime(9, 20), slot.StartsAtUtc);
     }
 
+    [Fact]
+    public async Task GetAvailableSlots_ExcludesActivelyBookedSlot()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await using var dbContext = await CreateMigratedContextAsync(connection);
+        await SeedSlotsAsync(dbContext);
+        var bookedSlot = await dbContext.AppointmentSlots
+            .SingleAsync(
+                slot =>
+                    slot.StartsAtUtc == UtcDateTime(9, 10)
+                    && slot.AvailabilitySession.ClinicianId == 1);
+        dbContext.Bookings.Add(
+            new Booking
+            {
+                AppointmentSlotId = bookedSlot.AppointmentSlotId,
+                Patient = new Patient
+                {
+                    Reference = "PAT-001",
+                    DisplayName = "Alex Morgan"
+                },
+                BookedAtUtc = UtcNow
+            });
+        await dbContext.SaveChangesAsync();
+        dbContext.ChangeTracker.Clear();
+        var controller = CreateController(dbContext);
+
+        var result = await controller.GetAvailableSlots(
+            fromUtc: null,
+            toUtc: null,
+            CancellationToken.None);
+
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var slots = Assert.IsAssignableFrom<
+            IReadOnlyList<AvailableAppointmentSlotResponse>>(okResult.Value);
+        var availableSlot = Assert.Single(slots);
+        Assert.Equal(UtcDateTime(9, 20), availableSlot.StartsAtUtc);
+    }
+
     [Theory]
     [InlineData(DateTimeKind.Local)]
     [InlineData(DateTimeKind.Unspecified)]

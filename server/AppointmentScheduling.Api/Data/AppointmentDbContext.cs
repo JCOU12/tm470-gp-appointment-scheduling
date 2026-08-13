@@ -13,6 +13,11 @@ public class AppointmentDbContext : DbContext
 
     public DbSet<Clinician> Clinicians => Set<Clinician>();
 
+    public DbSet<AvailabilitySession> AvailabilitySessions =>
+        Set<AvailabilitySession>();
+
+    public DbSet<AppointmentSlot> AppointmentSlots => Set<AppointmentSlot>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -54,6 +59,71 @@ public class AppointmentDbContext : DbContext
                     Role = "General Practitioner",
                     IsActive = false
                 });
+        });
+
+        modelBuilder.Entity<AvailabilitySession>(entity =>
+        {
+            entity.HasKey(session => session.AvailabilitySessionId);
+
+            entity.Property(session => session.StartsAtUtc)
+                .IsRequired();
+
+            entity.Property(session => session.EndsAtUtc)
+                .IsRequired();
+
+            entity.Property(session => session.SlotDurationMinutes)
+                .IsRequired();
+
+            entity.HasOne(session => session.Clinician)
+                .WithMany(clinician => clinician.AvailabilitySessions)
+                .HasForeignKey(session => session.ClinicianId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(session => new
+            {
+                session.ClinicianId,
+                session.StartsAtUtc
+            });
+
+            entity.ToTable(table =>
+            {
+                table.HasCheckConstraint(
+                    "CK_AvailabilitySessions_TimeRange",
+                    "\"EndsAtUtc\" > \"StartsAtUtc\"");
+                table.HasCheckConstraint(
+                    "CK_AvailabilitySessions_SlotDurationMinutes",
+                    "\"SlotDurationMinutes\" > 0");
+            });
+        });
+
+        modelBuilder.Entity<AppointmentSlot>(entity =>
+        {
+            entity.HasKey(slot => slot.AppointmentSlotId);
+
+            entity.Property(slot => slot.StartsAtUtc)
+                .IsRequired();
+
+            entity.Property(slot => slot.EndsAtUtc)
+                .IsRequired();
+
+            entity.HasOne(slot => slot.AvailabilitySession)
+                .WithMany(session => session.AppointmentSlots)
+                .HasForeignKey(slot => slot.AvailabilitySessionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(slot => new
+                {
+                    slot.AvailabilitySessionId,
+                    slot.StartsAtUtc
+                })
+                .IsUnique();
+
+            entity.ToTable(table =>
+            {
+                table.HasCheckConstraint(
+                    "CK_AppointmentSlots_TimeRange",
+                    "\"EndsAtUtc\" > \"StartsAtUtc\"");
+            });
         });
     }
 }

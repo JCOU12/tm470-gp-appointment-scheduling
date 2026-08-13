@@ -1,4 +1,5 @@
 using AppointmentScheduling.Api.Data;
+using AppointmentScheduling.Api.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,6 +13,8 @@ builder.Services.AddDbContext<AppointmentDbContext>(options =>
         builder.Configuration.GetConnectionString("AppointmentDatabase")
         ?? throw new InvalidOperationException(
             "Connection string 'AppointmentDatabase' was not found.")));
+
+builder.Services.AddSingleton<AppointmentSlotGenerator>();
 
 builder.Services.AddOpenApi();
 

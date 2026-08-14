@@ -36,6 +36,7 @@ public sealed class BookingsControllerTests
         Assert.Equal("Alex Morgan", response.PatientDisplayName);
         Assert.Equal("Active", response.Status);
         Assert.Equal(UtcNow, response.BookedAtUtc);
+        Assert.Null(response.CancelledAtUtc);
         Assert.Equal(UtcDateTime(9, 10), response.StartsAtUtc);
         Assert.Equal(UtcDateTime(9, 20), response.EndsAtUtc);
 
@@ -171,6 +172,100 @@ public sealed class BookingsControllerTests
         var response = Assert.IsType<BookingResponse>(created.Value);
         Assert.Equal("Alex Morgan", response.PatientDisplayName);
         Assert.Equal(1, await dbContext.Patients.CountAsync());
+    }
+
+    [Fact]
+    public async Task GetById_ExistingBooking_ReturnsStoredBooking()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await using var dbContext = await CreateMigratedContextAsync(connection);
+        var slot = await CreateSlotAsync(dbContext, clinicianId: 1, hour: 9, minute: 10);
+        var controller = CreateController(dbContext);
+        var createResult = await controller.Create(
+            new CreateBookingRequest(
+                slot.AppointmentSlotId,
+                "PAT-001",
+                "Alex Morgan"),
+            CancellationToken.None);
+        var created = Assert.IsType<CreatedResult>(createResult.Result);
+        var createdResponse = Assert.IsType<BookingResponse>(created.Value);
+
+        var result = await controller.GetById(
+            createdResponse.BookingId,
+            CancellationToken.None);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var response = Assert.IsType<BookingResponse>(ok.Value);
+        Assert.Equal(createdResponse, response);
+    }
+
+    [Fact]
+    public async Task GetById_CancelledBooking_ReturnsCancellationDetails()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await using var dbContext = await CreateMigratedContextAsync(connection);
+        var slot = await CreateSlotAsync(dbContext, clinicianId: 1, hour: 9, minute: 10);
+        var cancelledAtUtc = UtcDateTime(9, 5);
+        var booking = new Booking
+        {
+            AppointmentSlotId = slot.AppointmentSlotId,
+            Patient = new Patient
+            {
+                Reference = "PAT-001",
+                DisplayName = "Alex Morgan"
+            },
+            Status = BookingStatus.Cancelled,
+            BookedAtUtc = UtcDateTime(9, 1),
+            CancelledAtUtc = cancelledAtUtc
+        };
+        dbContext.Bookings.Add(booking);
+        await dbContext.SaveChangesAsync();
+        dbContext.ChangeTracker.Clear();
+        var controller = CreateController(dbContext);
+
+        var result = await controller.GetById(
+            booking.BookingId,
+            CancellationToken.None);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var response = Assert.IsType<BookingResponse>(ok.Value);
+        Assert.Equal("Cancelled", response.Status);
+        Assert.Equal(cancelledAtUtc, response.CancelledAtUtc);
+        Assert.Equal("PAT-001", response.PatientReference);
+    }
+
+    [Fact]
+    public async Task GetById_MissingBooking_ReturnsNotFound()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await using var dbContext = await CreateMigratedContextAsync(connection);
+        var controller = CreateController(dbContext);
+
+        var result = await controller.GetById(999, CancellationToken.None);
+
+        var notFound = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(StatusCodes.Status404NotFound, notFound.StatusCode);
+        var problem = Assert.IsType<ProblemDetails>(notFound.Value);
+        Assert.Equal("Booking not found", problem.Title);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public async Task GetById_InvalidBookingId_ReturnsBadRequest(int bookingId)
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await using var dbContext = await CreateMigratedContextAsync(connection);
+        var controller = CreateController(dbContext);
+
+        var result = await controller.GetById(
+            bookingId,
+            CancellationToken.None);
+
+        var badRequest = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(StatusCodes.Status400BadRequest, badRequest.StatusCode);
+        var problem = Assert.IsType<ProblemDetails>(badRequest.Value);
+        Assert.Equal("Invalid booking identifier", problem.Title);
     }
 
     private static BookingsController CreateController(

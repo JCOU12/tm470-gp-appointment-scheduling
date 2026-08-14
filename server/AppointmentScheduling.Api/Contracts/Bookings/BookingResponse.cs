@@ -7,5 +7,6 @@ public sealed record BookingResponse(
     string PatientDisplayName,
     string Status,
     DateTime BookedAtUtc,
+    DateTime? CancelledAtUtc,
     DateTime StartsAtUtc,
     DateTime EndsAtUtc);

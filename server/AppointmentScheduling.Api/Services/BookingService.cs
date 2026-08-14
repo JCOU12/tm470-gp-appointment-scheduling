@@ -21,6 +21,29 @@ public sealed class BookingService
         _timeProvider = timeProvider;
     }
 
+    public async Task<Booking> GetByIdAsync(
+        int bookingId,
+        CancellationToken cancellationToken)
+    {
+        if (bookingId <= 0)
+        {
+            throw new BookingValidationException(
+                "BookingId must be greater than zero.");
+        }
+
+        var booking = await _dbContext.Bookings
+            .AsNoTracking()
+            .Include(item => item.Patient)
+            .Include(item => item.AppointmentSlot)
+            .SingleOrDefaultAsync(
+                item => item.BookingId == bookingId,
+                cancellationToken);
+
+        return booking
+            ?? throw new BookingNotFoundException(
+                "The booking was not found.");
+    }
+
     public async Task<Booking> CreateAsync(
         int appointmentSlotId,
         string patientReference,

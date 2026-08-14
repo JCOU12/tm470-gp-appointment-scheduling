@@ -16,6 +16,38 @@ public sealed class BookingsController : ControllerBase
         _bookingService = bookingService;
     }
 
+    [HttpGet("{bookingId:int}")]
+    [ProducesResponseType<BookingResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<BookingResponse>> GetById(
+        int bookingId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var booking = await _bookingService.GetByIdAsync(
+                bookingId,
+                cancellationToken);
+
+            return Ok(ToResponse(booking));
+        }
+        catch (BookingValidationException exception)
+        {
+            return ProblemResponse(
+                "Invalid booking identifier",
+                exception.Message,
+                StatusCodes.Status400BadRequest);
+        }
+        catch (BookingNotFoundException exception)
+        {
+            return ProblemResponse(
+                "Booking not found",
+                exception.Message,
+                StatusCodes.Status404NotFound);
+        }
+    }
+
     [HttpPost]
     [ProducesResponseType<BookingResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -57,17 +89,23 @@ public sealed class BookingsController : ControllerBase
                 StatusCodes.Status409Conflict);
         }
 
-        var response = new BookingResponse(
+        var response = ToResponse(booking);
+
+        return Created($"/api/bookings/{booking.BookingId}", response);
+    }
+
+    private static BookingResponse ToResponse(Booking booking)
+    {
+        return new BookingResponse(
             booking.BookingId,
             booking.AppointmentSlotId,
             booking.Patient.Reference,
             booking.Patient.DisplayName,
             booking.Status.ToString(),
             booking.BookedAtUtc,
+            booking.CancelledAtUtc,
             booking.AppointmentSlot.StartsAtUtc,
             booking.AppointmentSlot.EndsAtUtc);
-
-        return Created($"/api/bookings/{booking.BookingId}", response);
     }
 
     private ObjectResult ProblemResponse(

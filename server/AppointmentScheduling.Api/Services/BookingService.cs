@@ -25,11 +25,7 @@ public sealed class BookingService
         int bookingId,
         CancellationToken cancellationToken)
     {
-        if (bookingId <= 0)
-        {
-            throw new BookingValidationException(
-                "BookingId must be greater than zero.");
-        }
+        ValidateBookingId(bookingId);
 
         var booking = await _dbContext.Bookings
             .AsNoTracking()
@@ -42,6 +38,43 @@ public sealed class BookingService
         return booking
             ?? throw new BookingNotFoundException(
                 "The booking was not found.");
+    }
+
+    public async Task<Booking> CancelAsync(
+        int bookingId,
+        CancellationToken cancellationToken)
+    {
+        ValidateBookingId(bookingId);
+
+        var booking = await _dbContext.Bookings
+            .Include(item => item.Patient)
+            .Include(item => item.AppointmentSlot)
+            .SingleOrDefaultAsync(
+                item => item.BookingId == bookingId,
+                cancellationToken)
+            ?? throw new BookingNotFoundException(
+                "The booking was not found.");
+
+        if (booking.Status == BookingStatus.Cancelled)
+        {
+            throw new BookingConflictException(
+                "The booking has already been cancelled.");
+        }
+
+        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+
+        if (booking.AppointmentSlot.StartsAtUtc <= utcNow)
+        {
+            throw new BookingConflictException(
+                "The booking cannot be cancelled after the appointment has started.");
+        }
+
+        booking.Status = BookingStatus.Cancelled;
+        booking.CancelledAtUtc = utcNow;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return booking;
     }
 
     public async Task<Booking> CreateAsync(
@@ -147,6 +180,15 @@ public sealed class BookingService
             && sqliteException.Message.Contains(
                 "Bookings.AppointmentSlotId",
                 StringComparison.Ordinal);
+    }
+
+    private static void ValidateBookingId(int bookingId)
+    {
+        if (bookingId <= 0)
+        {
+            throw new BookingValidationException(
+                "BookingId must be greater than zero.");
+        }
     }
 
     private static string ValidateAndNormalisePatientReference(

@@ -47,4 +47,18 @@ The proof of concept:
 
 ## Current status
 
-The initial ASP.NET Core API and xUnit test projects have been created. Entity Framework Core and SQLite dependencies are configured, the solution builds successfully, and the initial automated test passes.
+The API currently supports clinician data, validated availability sessions, generated appointment slots and transactional booking creation. The automated suite covers domain, persistence, controller and competing-booking behaviour.
+
+## Quality checks
+
+Pull requests and changes to `main` must pass the GitHub Actions CI workflow. It verifies locked dependency restoration, formatting and built-in .NET analyzer rules, a warning-free Release build, all automated tests, and at least 80% application line coverage.
+
+Run the equivalent checks locally with:
+
+```powershell
+dotnet restore AppointmentScheduling.sln --locked-mode
+dotnet format AppointmentScheduling.sln --verify-no-changes --no-restore --severity warn --exclude server/AppointmentScheduling.Api/Data/Migrations
+dotnet build AppointmentScheduling.sln --configuration Release --no-restore --warnaserror
+dotnet test AppointmentScheduling.sln --configuration Release --no-build --settings coverlet.runsettings --collect:"XPlat Code Coverage" --results-directory artifacts/test-results
+powershell -NoProfile -ExecutionPolicy Bypass -File ./eng/Assert-CodeCoverage.ps1 -CoverageDirectory artifacts/test-results -MinimumLineCoverage 80
+```

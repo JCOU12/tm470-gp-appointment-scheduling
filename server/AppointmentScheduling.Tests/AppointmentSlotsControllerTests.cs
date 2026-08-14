@@ -103,6 +103,35 @@ public sealed class AppointmentSlotsControllerTests
         Assert.Equal(UtcDateTime(9, 20), availableSlot.StartsAtUtc);
     }
 
+    [Fact]
+    public async Task GetAvailableSlots_ExcludesSlotOverlappingUnavailablePeriod()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await using var dbContext = await CreateMigratedContextAsync(connection);
+        await SeedSlotsAsync(dbContext);
+        dbContext.UnavailablePeriods.Add(
+            new UnavailablePeriod
+            {
+                ClinicianId = 1,
+                StartsAtUtc = UtcDateTime(9, 15),
+                EndsAtUtc = UtcDateTime(9, 20)
+            });
+        await dbContext.SaveChangesAsync();
+        dbContext.ChangeTracker.Clear();
+        var controller = CreateController(dbContext);
+
+        var result = await controller.GetAvailableSlots(
+            fromUtc: null,
+            toUtc: null,
+            CancellationToken.None);
+
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var slots = Assert.IsAssignableFrom<
+            IReadOnlyList<AvailableAppointmentSlotResponse>>(okResult.Value);
+        var availableSlot = Assert.Single(slots);
+        Assert.Equal(UtcDateTime(9, 20), availableSlot.StartsAtUtc);
+    }
+
     [Theory]
     [InlineData(DateTimeKind.Local)]
     [InlineData(DateTimeKind.Unspecified)]

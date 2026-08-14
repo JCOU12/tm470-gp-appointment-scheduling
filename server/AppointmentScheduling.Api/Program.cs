@@ -17,6 +17,8 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<AvailabilitySessionService>();
 builder.Services.AddScoped<BookingService>();
 builder.Services.AddScoped<SchedulingService>();
+builder.Services.AddScoped<StaffBookingQueryService>();
+builder.Services.AddScoped<UnavailablePeriodService>();
 
 builder.Services.AddOpenApi();
 

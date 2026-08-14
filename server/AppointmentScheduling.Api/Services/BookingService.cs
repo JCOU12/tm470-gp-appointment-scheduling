@@ -119,6 +119,22 @@ public sealed class BookingService
                 "The appointment slot is no longer available.");
         }
 
+        var isBlocked = await _dbContext.UnavailablePeriods
+            .AsNoTracking()
+            .AnyAsync(
+                period =>
+                    period.ClinicianId
+                        == appointmentSlot.AvailabilitySession.ClinicianId
+                    && period.StartsAtUtc < appointmentSlot.EndsAtUtc
+                    && appointmentSlot.StartsAtUtc < period.EndsAtUtc,
+                cancellationToken);
+
+        if (isBlocked)
+        {
+            throw new BookingConflictException(
+                "The appointment slot is no longer available.");
+        }
+
         var alreadyBooked = await _dbContext.Bookings
             .AsNoTracking()
             .AnyAsync(

@@ -12,4 +12,7 @@ public class Clinician
 
     public ICollection<AvailabilitySession> AvailabilitySessions { get; set; }
         = new List<AvailabilitySession>();
+
+    public ICollection<UnavailablePeriod> UnavailablePeriods { get; set; }
+        = new List<UnavailablePeriod>();
 }

@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_NOLOGO: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+
+jobs:
+  quality:
+    name: Lint, build and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: '**/packages.lock.json'
+
+      - name: Restore locked dependencies
+        run: dotnet restore AppointmentScheduling.sln --locked-mode
+
+      - name: Check formatting and analyzer rules
+        run: >-
+          dotnet format AppointmentScheduling.sln
+          --verify-no-changes
+          --no-restore
+          --severity warn
+          --exclude server/AppointmentScheduling.Api/Data/Migrations
+
+      - name: Build with warnings treated as errors
+        run: dotnet build AppointmentScheduling.sln --configuration Release --no-restore --warnaserror
+
+      - name: Run tests and collect coverage
+        run: >-
+          dotnet test AppointmentScheduling.sln
+          --configuration Release
+          --no-build
+          --settings coverlet.runsettings
+          --collect:"XPlat Code Coverage"
+          --results-directory artifacts/test-results
+          --logger "trx;LogFileName=tests.trx"
+
+      - name: Enforce 80% line coverage
+        shell: pwsh
+        run: ./eng/Assert-CodeCoverage.ps1 -CoverageDirectory artifacts/test-results -MinimumLineCoverage 80
+
+      - name: Retain test and coverage reports
+        if: ${{ always() && hashFiles('artifacts/test-results/**') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-and-coverage
+          path: artifacts/test-results
+          if-no-files-found: error
+          retention-days: 14

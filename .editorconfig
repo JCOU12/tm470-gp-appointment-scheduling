@@ -1,0 +1,29 @@
+root = true
+
+[*]
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{cs,csx}]
+indent_style = space
+indent_size = 4
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+
+[server/AppointmentScheduling.Api/Data/Migrations/*.cs]
+generated_code = true
+
+[server/AppointmentScheduling.Tests/*.cs]
+# Scenario-style test names use underscores to separate action, condition and outcome.
+dotnet_diagnostic.CA1707.severity = none
+
+[*.{csproj,props,targets,xml}]
+indent_style = space
+indent_size = 2
+
+[*.{yml,yaml,json}]
+indent_style = space
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false

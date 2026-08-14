@@ -40,7 +40,7 @@ jobs:
       - name: Restore locked dependencies
         run: dotnet restore AppointmentScheduling.sln --locked-mode
 
-      - name: Check formatting and analyzer rules
+      - name: Check formatting and analyser rules
         run: >-
           dotnet format AppointmentScheduling.sln
           --verify-no-changes
@@ -58,18 +58,18 @@ jobs:
           --no-build
           --settings coverlet.runsettings
           --collect:"XPlat Code Coverage"
-          --results-directory artifacts/test-results
+          --results-directory artefacts/test-results
           --logger "trx;LogFileName=tests.trx"
 
       - name: Enforce 80% line coverage
         shell: pwsh
-        run: ./eng/Assert-CodeCoverage.ps1 -CoverageDirectory artifacts/test-results -MinimumLineCoverage 80
+        run: ./eng/Assert-CodeCoverage.ps1 -CoverageDirectory artefacts/test-results -MinimumLineCoverage 80
 
       - name: Retain test and coverage reports
-        if: ${{ always() && hashFiles('artifacts/test-results/**') != '' }}
+        if: ${{ always() && hashFiles('artefacts/test-results/**') != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: test-results-and-coverage
-          path: artifacts/test-results
+          path: artefacts/test-results
           if-no-files-found: error
           retention-days: 14

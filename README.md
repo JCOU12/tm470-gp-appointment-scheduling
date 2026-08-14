@@ -51,7 +51,7 @@ The API currently supports clinician data, validated availability sessions, gene
 
 ## Quality checks
 
-Pull requests and changes to `main` must pass the GitHub Actions CI workflow. It verifies locked dependency restoration, formatting and built-in .NET analyzer rules, a warning-free Release build, all automated tests, and at least 80% application line coverage.
+Pull requests and changes to `main` must pass the GitHub Actions CI workflow. It verifies locked dependency restoration, formatting and built-in .NET analyser rules, a warning-free Release build, all automated tests, and at least 80% application line coverage.
 
 Run the equivalent checks locally with:
 
@@ -59,6 +59,6 @@ Run the equivalent checks locally with:
 dotnet restore AppointmentScheduling.sln --locked-mode
 dotnet format AppointmentScheduling.sln --verify-no-changes --no-restore --severity warn --exclude server/AppointmentScheduling.Api/Data/Migrations
 dotnet build AppointmentScheduling.sln --configuration Release --no-restore --warnaserror
-dotnet test AppointmentScheduling.sln --configuration Release --no-build --settings coverlet.runsettings --collect:"XPlat Code Coverage" --results-directory artifacts/test-results
-powershell -NoProfile -ExecutionPolicy Bypass -File ./eng/Assert-CodeCoverage.ps1 -CoverageDirectory artifacts/test-results -MinimumLineCoverage 80
+dotnet test AppointmentScheduling.sln --configuration Release --no-build --settings coverlet.runsettings --collect:"XPlat Code Coverage" --results-directory artefacts/test-results
+powershell -NoProfile -ExecutionPolicy Bypass -File ./eng/Assert-CodeCoverage.ps1 -CoverageDirectory artefacts/test-results -MinimumLineCoverage 80
 ```

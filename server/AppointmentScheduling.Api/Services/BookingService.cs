@@ -27,9 +27,9 @@ public sealed class BookingService
         string patientDisplayName,
         CancellationToken cancellationToken)
     {
-        var normalizedReference = ValidateAndNormalizePatientReference(
+        var normalisedReference = ValidateAndNormalisePatientReference(
             patientReference);
-        var normalizedDisplayName = ValidateAndNormalizeDisplayName(
+        var normalisedDisplayName = ValidateAndNormaliseDisplayName(
             patientDisplayName);
 
         if (appointmentSlotId <= 0)
@@ -79,12 +79,12 @@ public sealed class BookingService
 
         var patient = await _dbContext.Patients
             .SingleOrDefaultAsync(
-                item => item.Reference == normalizedReference,
+                item => item.Reference == normalisedReference,
                 cancellationToken)
             ?? new Patient
             {
-                Reference = normalizedReference,
-                DisplayName = normalizedDisplayName
+                Reference = normalisedReference,
+                DisplayName = normalisedDisplayName
             };
 
         var booking = new Booking
@@ -126,7 +126,7 @@ public sealed class BookingService
                 StringComparison.Ordinal);
     }
 
-    private static string ValidateAndNormalizePatientReference(
+    private static string ValidateAndNormalisePatientReference(
         string patientReference)
     {
         if (string.IsNullOrWhiteSpace(patientReference))
@@ -135,18 +135,18 @@ public sealed class BookingService
                 "PatientReference is required.");
         }
 
-        var normalizedReference = patientReference.Trim().ToUpperInvariant();
+        var normalisedReference = patientReference.Trim().ToUpperInvariant();
 
-        if (normalizedReference.Length > MaximumPatientReferenceLength)
+        if (normalisedReference.Length > MaximumPatientReferenceLength)
         {
             throw new BookingValidationException(
                 $"PatientReference must not exceed {MaximumPatientReferenceLength} characters.");
         }
 
-        return normalizedReference;
+        return normalisedReference;
     }
 
-    private static string ValidateAndNormalizeDisplayName(
+    private static string ValidateAndNormaliseDisplayName(
         string patientDisplayName)
     {
         if (string.IsNullOrWhiteSpace(patientDisplayName))
@@ -155,14 +155,14 @@ public sealed class BookingService
                 "PatientDisplayName is required.");
         }
 
-        var normalizedDisplayName = patientDisplayName.Trim();
+        var normalisedDisplayName = patientDisplayName.Trim();
 
-        if (normalizedDisplayName.Length > MaximumPatientDisplayNameLength)
+        if (normalisedDisplayName.Length > MaximumPatientDisplayNameLength)
         {
             throw new BookingValidationException(
                 $"PatientDisplayName must not exceed {MaximumPatientDisplayNameLength} characters.");
         }
 
-        return normalizedDisplayName;
+        return normalisedDisplayName;
     }
 }

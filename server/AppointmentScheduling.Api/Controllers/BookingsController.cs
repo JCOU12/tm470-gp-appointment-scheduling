@@ -48,6 +48,46 @@ public sealed class BookingsController : ControllerBase
         }
     }
 
+    [HttpPost("{bookingId:int}/cancel")]
+    [ProducesResponseType<BookingResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<BookingResponse>> Cancel(
+        int bookingId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var booking = await _bookingService.CancelAsync(
+                bookingId,
+                cancellationToken);
+
+            return Ok(ToResponse(booking));
+        }
+        catch (BookingValidationException exception)
+        {
+            return ProblemResponse(
+                "Invalid booking identifier",
+                exception.Message,
+                StatusCodes.Status400BadRequest);
+        }
+        catch (BookingNotFoundException exception)
+        {
+            return ProblemResponse(
+                "Booking not found",
+                exception.Message,
+                StatusCodes.Status404NotFound);
+        }
+        catch (BookingConflictException exception)
+        {
+            return ProblemResponse(
+                "Booking cancellation conflict",
+                exception.Message,
+                StatusCodes.Status409Conflict);
+        }
+    }
+
     [HttpPost]
     [ProducesResponseType<BookingResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]

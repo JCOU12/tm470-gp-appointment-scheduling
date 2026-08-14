@@ -44,6 +44,12 @@ public sealed class SchedulingService
                 slot =>
                     slot.StartsAtUtc >= effectiveFromUtc
                     && slot.AvailabilitySession.Clinician.IsActive
+                    && !_dbContext.UnavailablePeriods.Any(
+                        period =>
+                            period.ClinicianId
+                                == slot.AvailabilitySession.ClinicianId
+                            && period.StartsAtUtc < slot.EndsAtUtc
+                            && slot.StartsAtUtc < period.EndsAtUtc)
                     && !slot.Bookings.Any(
                         booking => booking.Status == BookingStatus.Active));
 

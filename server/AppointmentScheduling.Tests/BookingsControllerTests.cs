@@ -124,6 +124,31 @@ public sealed class BookingsControllerTests
         Assert.Empty(await dbContext.Bookings.ToListAsync());
     }
 
+    [Fact]
+    public async Task Create_BlockedSlot_ReturnsConflict()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await using var dbContext = await CreateMigratedContextAsync(connection);
+        var slot = await CreateSlotAsync(dbContext, clinicianId: 1, hour: 9, minute: 10);
+        dbContext.UnavailablePeriods.Add(
+            new UnavailablePeriod
+            {
+                ClinicianId = 1,
+                StartsAtUtc = UtcDateTime(9, 15),
+                EndsAtUtc = UtcDateTime(9, 20)
+            });
+        await dbContext.SaveChangesAsync();
+        var controller = CreateController(dbContext);
+
+        var result = await controller.Create(
+            new CreateBookingRequest(slot.AppointmentSlotId, "PAT-001", "Alex"),
+            CancellationToken.None);
+
+        var conflict = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(StatusCodes.Status409Conflict, conflict.StatusCode);
+        Assert.Empty(await dbContext.Bookings.ToListAsync());
+    }
+
     [Theory]
     [InlineData(0, "PAT-001", "Alex")]
     [InlineData(1, "", "Alex")]

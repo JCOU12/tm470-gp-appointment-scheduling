@@ -47,7 +47,7 @@ The proof of concept:
 
 ## Current status
 
-The API currently supports clinician data, validated availability sessions, generated appointment slots, transactional booking creation, booking retrieval and cancellation. The automated suite covers domain, persistence, controller and competing-booking behaviour.
+The API currently supports clinician data, validated availability sessions, unavailable periods, generated appointment slots, transactional booking creation, booking retrieval, cancellation and staff booking queries. The automated suite covers domain, persistence, controller, scheduling-conflict and competing-booking behaviour.
 
 ## Quality checks
 

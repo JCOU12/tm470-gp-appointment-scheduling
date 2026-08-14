@@ -18,6 +18,9 @@ public class AppointmentDbContext : DbContext
 
     public DbSet<AppointmentSlot> AppointmentSlots => Set<AppointmentSlot>();
 
+    public DbSet<UnavailablePeriod> UnavailablePeriods =>
+        Set<UnavailablePeriod>();
+
     public DbSet<Patient> Patients => Set<Patient>();
 
     public DbSet<Booking> Bookings => Set<Booking>();
@@ -126,6 +129,35 @@ public class AppointmentDbContext : DbContext
             {
                 table.HasCheckConstraint(
                     "CK_AppointmentSlots_TimeRange",
+                    "\"EndsAtUtc\" > \"StartsAtUtc\"");
+            });
+        });
+
+        modelBuilder.Entity<UnavailablePeriod>(entity =>
+        {
+            entity.HasKey(period => period.UnavailablePeriodId);
+
+            entity.Property(period => period.StartsAtUtc)
+                .IsRequired();
+
+            entity.Property(period => period.EndsAtUtc)
+                .IsRequired();
+
+            entity.HasOne(period => period.Clinician)
+                .WithMany(clinician => clinician.UnavailablePeriods)
+                .HasForeignKey(period => period.ClinicianId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(period => new
+            {
+                period.ClinicianId,
+                period.StartsAtUtc
+            });
+
+            entity.ToTable(table =>
+            {
+                table.HasCheckConstraint(
+                    "CK_UnavailablePeriods_TimeRange",
                     "\"EndsAtUtc\" > \"StartsAtUtc\"");
             });
         });

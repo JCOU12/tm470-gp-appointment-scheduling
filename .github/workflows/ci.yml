@@ -22,7 +22,7 @@ env:
 
 jobs:
   quality:
-    name: Lint, build and test
+    name: Backend lint, build and test
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -71,5 +71,48 @@ jobs:
         with:
           name: test-results-and-coverage
           path: artefacts/test-results
+          if-no-files-found: error
+          retention-days: 14
+
+  frontend-quality:
+    name: Frontend lint, build and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: client/AppointmentScheduling.Web
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22.13.0
+          cache: npm
+          cache-dependency-path: client/AppointmentScheduling.Web/package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
+
+      - name: Check frontend lint rules
+        run: npm run lint
+
+      - name: Build production client
+        run: npm run build
+
+      - name: Run frontend tests and enforce coverage
+        run: npm run test:coverage
+
+      - name: Retain frontend coverage report
+        if: ${{ always() && hashFiles('client/AppointmentScheduling.Web/coverage/**') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: client/AppointmentScheduling.Web/coverage
           if-no-files-found: error
           retention-days: 14

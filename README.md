@@ -47,11 +47,31 @@ The proof of concept:
 
 ## Current status
 
-The API currently supports clinician data, validated availability sessions, unavailable periods, generated appointment slots, transactional booking creation, booking retrieval, cancellation and staff booking queries. The automated suite covers domain, persistence, controller, scheduling-conflict and competing-booking behaviour.
+The API currently supports clinician data, validated availability sessions, unavailable periods, generated appointment slots, transactional booking creation, booking retrieval, cancellation and staff booking queries. The React patient interface supports viewing available appointments, booking, retrieving a booking and two-step cancellation with accessible feedback. The automated suites cover backend domain, persistence, controller and concurrency behaviour alongside frontend patient workflows.
+
+## Run locally
+
+Start the API from the repository root:
+
+```powershell
+dotnet run --project server/AppointmentScheduling.Api --launch-profile http
+```
+
+In a second terminal, install and start the client:
+
+```powershell
+cd client/AppointmentScheduling.Web
+npm install
+npm run dev
+```
+
+The development client proxies `/api` requests to `http://localhost:5260`.
 
 ## Quality checks
 
 Pull requests and changes to `main` must pass the GitHub Actions CI workflow. It verifies locked dependency restoration, formatting and built-in .NET analyser rules, a warning-free Release build, all automated tests, and at least 80% application line coverage.
+
+The frontend CI job installs locked npm dependencies, audits production dependencies, runs ESLint, creates a production build and requires at least 80% statement, branch, function and line coverage.
 
 Run the equivalent checks locally with:
 
@@ -61,4 +81,14 @@ dotnet format AppointmentScheduling.sln --verify-no-changes --no-restore --sever
 dotnet build AppointmentScheduling.sln --configuration Release --no-restore --warnaserror
 dotnet test AppointmentScheduling.sln --configuration Release --no-build --settings coverlet.runsettings --collect:"XPlat Code Coverage" --results-directory artefacts/test-results
 powershell -NoProfile -ExecutionPolicy Bypass -File ./eng/Assert-CodeCoverage.ps1 -CoverageDirectory artefacts/test-results -MinimumLineCoverage 80
+```
+
+Run the frontend checks from `client/AppointmentScheduling.Web` with:
+
+```powershell
+npm ci
+npm audit --audit-level=high
+npm run lint
+npm run build
+npm run test:coverage
 ```

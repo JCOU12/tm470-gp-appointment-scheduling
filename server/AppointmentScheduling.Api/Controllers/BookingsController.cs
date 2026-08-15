@@ -7,6 +7,7 @@ namespace AppointmentScheduling.Api.Controllers;
 
 [ApiController]
 [Route("api/bookings")]
+[Tags("Patient appointments")]
 public sealed class BookingsController : ControllerBase
 {
     private readonly BookingService _bookingService;
@@ -17,6 +18,10 @@ public sealed class BookingsController : ControllerBase
     }
 
     [HttpGet("{bookingId:int}")]
+    [EndpointName("GetBooking")]
+    [EndpointSummary("Get a booking")]
+    [EndpointDescription(
+        "Returns an active or cancelled booking using its numeric booking reference.")]
     [ProducesResponseType<BookingResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -49,6 +54,10 @@ public sealed class BookingsController : ControllerBase
     }
 
     [HttpPost("{bookingId:int}/cancel")]
+    [EndpointName("CancelBooking")]
+    [EndpointSummary("Cancel a booking")]
+    [EndpointDescription(
+        "Cancels a future active booking and releases its appointment slot. A booking that is already cancelled or has started cannot be cancelled.")]
     [ProducesResponseType<BookingResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -89,6 +98,10 @@ public sealed class BookingsController : ControllerBase
     }
 
     [HttpPost]
+    [EndpointName("CreateBooking")]
+    [EndpointSummary("Book an appointment")]
+    [EndpointDescription(
+        "Creates an active booking for an available appointment slot. Availability is rechecked during the transaction to prevent double booking.")]
     [ProducesResponseType<BookingResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]

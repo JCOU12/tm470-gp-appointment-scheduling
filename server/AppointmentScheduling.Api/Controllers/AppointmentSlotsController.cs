@@ -7,6 +7,7 @@ namespace AppointmentScheduling.Api.Controllers;
 
 [ApiController]
 [Route("api/slots")]
+[Tags("Patient appointments")]
 public sealed class AppointmentSlotsController : ControllerBase
 {
     private readonly SchedulingService _schedulingService;
@@ -17,13 +18,17 @@ public sealed class AppointmentSlotsController : ControllerBase
     }
 
     [HttpGet]
+    [EndpointName("GetAvailableAppointmentSlots")]
+    [EndpointSummary("List available appointment slots")]
+    [EndpointDescription(
+        "Returns future appointment slots for active clinicians, excluding slots that are booked or overlap an unavailable period. Optional UTC boundaries define a half-open time range.")]
     [ProducesResponseType<IReadOnlyList<AvailableAppointmentSlotResponse>>(
         StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IReadOnlyList<AvailableAppointmentSlotResponse>>>
         GetAvailableSlots(
-            [FromQuery] DateTime? fromUtc,
-            [FromQuery] DateTime? toUtc,
+            [FromQuery(Name = "fromUtc")] DateTime? fromUtc,
+            [FromQuery(Name = "toUtc")] DateTime? toUtc,
             CancellationToken cancellationToken)
     {
         IReadOnlyList<AppointmentSlot> availableSlots;

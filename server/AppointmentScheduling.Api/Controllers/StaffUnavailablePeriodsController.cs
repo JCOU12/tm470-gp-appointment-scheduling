@@ -7,6 +7,7 @@ namespace AppointmentScheduling.Api.Controllers;
 
 [ApiController]
 [Route("api/staff/unavailable-periods")]
+[Tags("Staff scheduling")]
 public sealed class StaffUnavailablePeriodsController : ControllerBase
 {
     private readonly UnavailablePeriodService _unavailablePeriodService;
@@ -18,6 +19,10 @@ public sealed class StaffUnavailablePeriodsController : ControllerBase
     }
 
     [HttpPost]
+    [EndpointName("CreateUnavailablePeriod")]
+    [EndpointSummary("Block a clinician's time")]
+    [EndpointDescription(
+        "Creates a UTC period during which a clinician cannot be booked. It must not overlap another unavailable period or an active booking.")]
     [ProducesResponseType<UnavailablePeriodResponse>(
         StatusCodes.Status201Created)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]

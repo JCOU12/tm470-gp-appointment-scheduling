@@ -7,6 +7,7 @@ namespace AppointmentScheduling.Api.Controllers;
 
 [ApiController]
 [Route("api/staff/bookings")]
+[Tags("Staff bookings")]
 public sealed class StaffBookingsController : ControllerBase
 {
     private readonly StaffBookingQueryService _staffBookingQueryService;
@@ -18,14 +19,18 @@ public sealed class StaffBookingsController : ControllerBase
     }
 
     [HttpGet]
+    [EndpointName("GetStaffBookings")]
+    [EndpointSummary("List bookings for staff")]
+    [EndpointDescription(
+        "Returns active and cancelled bookings in appointment order. Results can be filtered by clinician, half-open UTC time range and booking status.")]
     [ProducesResponseType<IReadOnlyList<StaffBookingResponse>>(
         StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IReadOnlyList<StaffBookingResponse>>> Get(
-        int? clinicianId,
-        DateTime? fromUtc,
-        DateTime? toUtc,
-        BookingStatus? status,
+        [FromQuery] int? clinicianId,
+        [FromQuery] DateTime? fromUtc,
+        [FromQuery] DateTime? toUtc,
+        [FromQuery] BookingStatus? status,
         CancellationToken cancellationToken)
     {
         try

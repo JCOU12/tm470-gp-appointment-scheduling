@@ -67,6 +67,14 @@ npm run dev
 
 The development client proxies `/api` requests to `http://localhost:5260`.
 
+Interactive API documentation is available in Development at:
+
+```text
+http://localhost:5260/swagger
+```
+
+Swagger UI groups the patient and staff endpoints and can send test requests directly to the running API. The underlying OpenAPI document remains available at `http://localhost:5260/openapi/v1.json`.
+
 ## Quality checks
 
 Pull requests and changes to `main` must pass the GitHub Actions CI workflow. It verifies locked dependency restoration, formatting and built-in .NET analyser rules, a warning-free Release build, all automated tests, and at least 80% application line coverage.

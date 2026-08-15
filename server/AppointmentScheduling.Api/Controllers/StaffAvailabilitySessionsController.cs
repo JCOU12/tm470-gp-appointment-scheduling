@@ -7,6 +7,7 @@ namespace AppointmentScheduling.Api.Controllers;
 
 [ApiController]
 [Route("api/staff/sessions")]
+[Tags("Staff scheduling")]
 public sealed class StaffAvailabilitySessionsController : ControllerBase
 {
     private readonly AvailabilitySessionService _availabilitySessionService;
@@ -18,6 +19,10 @@ public sealed class StaffAvailabilitySessionsController : ControllerBase
     }
 
     [HttpPost]
+    [EndpointName("CreateAvailabilitySession")]
+    [EndpointSummary("Create a clinician availability session")]
+    [EndpointDescription(
+        "Creates a UTC availability session for an active clinician and generates equal-duration appointment slots. The duration must divide the session exactly and the session must not overlap existing availability.")]
     [ProducesResponseType<AvailabilitySessionResponse>(
         StatusCodes.Status201Created)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]

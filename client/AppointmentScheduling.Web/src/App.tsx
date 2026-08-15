@@ -189,27 +189,20 @@ export default function App() {
             GP
           </span>
           <div>
-            <span className="service-name">Sample GP Surgery</span>
+            <span className="service-name">Oakfield Medical Centre</span>
             <span className="service-description">Appointment service</span>
           </div>
         </div>
       </header>
-
-      <div className="prototype-banner">
-        <div className="page-width">
-          <strong>Proof of concept:</strong> use fictional information only. This
-          service is not connected to the NHS.
-        </div>
-      </div>
 
       <main className="page-width main-content" id="main-content">
         <section className="intro" aria-labelledby="page-heading">
           <span className="eyebrow">Patient appointments</span>
           <h1 id="page-heading">Book or manage an appointment</h1>
           <p>
-            Choose an available appointment, enter fictional patient details and
-            receive immediate confirmation. Telephone and assisted routes would
-            remain necessary in a real service.
+            Choose an available appointment, enter your details and receive
+            immediate confirmation. You can also view or cancel an existing
+            booking.
           </p>
         </section>
 
@@ -242,8 +235,8 @@ export default function App() {
           <span className="step-label">Step 2</span>
           <h2 id="details-heading">Enter patient details</h2>
           <p className="section-introduction">
-            For this prototype, enter a fictional reference and name. Do not use
-            real patient information.
+            Enter your patient reference and name so that we can confirm your
+            appointment.
           </p>
 
           {selectedSlot !== null && (
@@ -258,7 +251,7 @@ export default function App() {
 
           <form onSubmit={(event) => void handleCreateBooking(event)}>
             <div className="form-group">
-              <label htmlFor="patient-reference">Fictional patient reference</label>
+              <label htmlFor="patient-reference">Patient reference</label>
               <span className="form-hint" id="patient-reference-hint">
                 For example, PAT-001
               </span>
@@ -274,7 +267,7 @@ export default function App() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="patient-name">Fictional patient name</label>
+              <label htmlFor="patient-name">Patient name</label>
               <input
                 id="patient-name"
                 value={patientDisplayName}
@@ -342,7 +335,7 @@ export default function App() {
 
       <footer className="service-footer">
         <div className="page-width">
-          <p>TM470 appointment-scheduling proof of concept</p>
+          <p>Oakfield Medical Centre appointment service</p>
         </div>
       </footer>
     </>

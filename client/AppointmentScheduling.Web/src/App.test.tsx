@@ -44,11 +44,11 @@ async function selectSlotAndEnterPatientDetails() {
     await screen.findByRole('radio', { name: /Dr Maya Patel/i }),
   )
   await user.type(
-    screen.getByRole('textbox', { name: /fictional patient reference/i }),
+    screen.getByRole('textbox', { name: /^patient reference$/i }),
     'PAT-001',
   )
   await user.type(
-    screen.getByRole('textbox', { name: /fictional patient name/i }),
+    screen.getByRole('textbox', { name: /^patient name$/i }),
     'Alex Morgan',
   )
   return user
@@ -73,9 +73,7 @@ describe('patient appointment workflow', () => {
     expect(
       screen.getByRole('heading', { name: /book or manage an appointment/i }),
     ).toBeInTheDocument()
-    expect(
-      screen.getByText(/use fictional information only/i),
-    ).toBeInTheDocument()
+    expect(screen.getByText('Oakfield Medical Centre')).toBeInTheDocument()
     expect(
       await screen.findByRole('radio', { name: /Dr Maya Patel/i }),
     ).toBeInTheDocument()

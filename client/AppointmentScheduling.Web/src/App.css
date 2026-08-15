@@ -57,20 +57,6 @@
   font-size: 0.9rem;
 }
 
-.prototype-banner {
-  border-bottom: 1px solid #d8dde0;
-  background: #e8edee;
-  color: #263238;
-}
-
-.prototype-banner .page-width {
-  padding-block: 0.8rem;
-}
-
-.prototype-banner strong {
-  padding-right: 0.4rem;
-}
-
 .main-content {
   padding-block: 2.5rem 4rem;
 }

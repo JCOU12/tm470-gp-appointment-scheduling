@@ -77,6 +77,18 @@ http://localhost:5260/swagger
 
 Swagger UI groups the patient and staff endpoints and can send test requests directly to the running API. The underlying OpenAPI document remains available at `http://localhost:5260/openapi/v1.json`.
 
+### Reset the database
+
+To start with a fresh database when one already exists, stop the API and run these commands from the repository root:
+
+```powershell
+cd server/AppointmentScheduling.Api
+dotnet ef database drop --force
+dotnet ef database update
+```
+
+This removes the existing data, recreates the database from the migrations and restores the seeded data.
+
 ## Quality checks
 
 Pull requests and changes to `main` must pass the GitHub Actions CI workflow. It verifies locked dependency restoration, formatting and built-in .NET analyser rules, a warning-free Release build, all automated tests, and at least 80% application line coverage.

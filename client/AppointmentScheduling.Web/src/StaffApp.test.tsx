@@ -103,10 +103,22 @@ describe('staff appointment workflow', () => {
       screen.getByLabelText('Clinician', { selector: '#session-clinician' }),
       '1',
     )
-    await user.type(screen.getByLabelText('Session start'), '2026-08-20T09:00')
-    await user.type(screen.getByLabelText('Session end'), '2026-08-20T10:00')
-    await user.clear(screen.getByLabelText('Appointment length in minutes'))
-    await user.type(screen.getByLabelText('Appointment length in minutes'), '30')
+    await user.type(
+      screen.getByLabelText('Clinician available from'),
+      '2026-08-20T09:00',
+    )
+    await user.type(
+      screen.getByLabelText('Clinician available until'),
+      '2026-08-20T10:00',
+    )
+    await user.clear(screen.getByLabelText('Length of each appointment in minutes'))
+    await user.type(
+      screen.getByLabelText('Length of each appointment in minutes'),
+      '30',
+    )
+    expect(
+      screen.getByText('This will create 2 appointments between 09:00 and 10:00.'),
+    ).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: /create session/i }))
 
     expect(
@@ -220,8 +232,14 @@ describe('staff appointment workflow', () => {
       screen.getByLabelText('Clinician', { selector: '#session-clinician' }),
       '1',
     )
-    await user.type(screen.getByLabelText('Session start'), '2026-08-20T09:00')
-    await user.type(screen.getByLabelText('Session end'), '2026-08-20T10:00')
+    await user.type(
+      screen.getByLabelText('Clinician available from'),
+      '2026-08-20T09:00',
+    )
+    await user.type(
+      screen.getByLabelText('Clinician available until'),
+      '2026-08-20T10:00',
+    )
     await user.click(screen.getByRole('button', { name: /create session/i }))
 
     expect(

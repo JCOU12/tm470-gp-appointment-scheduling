@@ -36,6 +36,40 @@ function localDateBoundaryToUtc(value: string, followingDay = false): string {
   return boundary.toISOString()
 }
 
+function getAvailabilitySummary(
+  startsAt: string,
+  endsAt: string,
+  appointmentLength: string,
+): string | null {
+  if (startsAt === '' || endsAt === '' || appointmentLength === '') {
+    return null
+  }
+
+  const startsAtMilliseconds = new Date(startsAt).getTime()
+  const endsAtMilliseconds = new Date(endsAt).getTime()
+  const appointmentLengthMinutes = Number(appointmentLength)
+  const availabilityMinutes =
+    (endsAtMilliseconds - startsAtMilliseconds) / 60_000
+
+  if (
+    !Number.isFinite(availabilityMinutes) ||
+    !Number.isFinite(appointmentLengthMinutes) ||
+    availabilityMinutes <= 0 ||
+    appointmentLengthMinutes <= 0
+  ) {
+    return null
+  }
+
+  if (availabilityMinutes % appointmentLengthMinutes !== 0) {
+    return `The availability period cannot be divided evenly into ${appointmentLengthMinutes}-minute appointments.`
+  }
+
+  const appointmentCount = availabilityMinutes / appointmentLengthMinutes
+  const appointmentLabel = appointmentCount === 1 ? 'appointment' : 'appointments'
+
+  return `This will create ${appointmentCount} ${appointmentLabel} between ${startsAt.slice(11, 16)} and ${endsAt.slice(11, 16)}.`
+}
+
 export default function StaffApp() {
   const [clinicians, setClinicians] = useState<Clinician[]>([])
   const [bookings, setBookings] = useState<StaffBooking[]>([])
@@ -197,6 +231,11 @@ export default function StaffApp() {
   }
 
   const formsDisabled = isLoading || clinicians.length === 0
+  const availabilitySummary = getAvailabilitySummary(
+    sessionStart,
+    sessionEnd,
+    slotDuration,
+  )
 
   return (
     <ServiceLayout activeArea="staff">
@@ -231,8 +270,8 @@ export default function StaffApp() {
           <span className="eyebrow">Availability</span>
           <h2 id="session-heading">Create an availability session</h2>
           <p className="section-introduction">
-            Appointment slots are generated automatically across the session.
-            Times are entered in local time.
+            Appointments will be generated throughout this availability period.
+            Enter times in local time.
           </p>
 
           <form onSubmit={(event) => void handleCreateSession(event)}>
@@ -255,7 +294,7 @@ export default function StaffApp() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="session-start">Session start</label>
+              <label htmlFor="session-start">Clinician available from</label>
               <input
                 id="session-start"
                 type="datetime-local"
@@ -267,7 +306,7 @@ export default function StaffApp() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="session-end">Session end</label>
+              <label htmlFor="session-end">Clinician available until</label>
               <input
                 id="session-end"
                 type="datetime-local"
@@ -279,7 +318,9 @@ export default function StaffApp() {
             </div>
 
             <div className="form-group compact-field">
-              <label htmlFor="slot-duration">Appointment length in minutes</label>
+              <label htmlFor="slot-duration">
+                Length of each appointment in minutes
+              </label>
               <input
                 id="slot-duration"
                 type="number"
@@ -291,6 +332,12 @@ export default function StaffApp() {
                 disabled={isSubmittingSession}
               />
             </div>
+
+            {availabilitySummary !== null && (
+              <p className="availability-summary" aria-live="polite">
+                {availabilitySummary}
+              </p>
+            )}
 
             <button
               className="button-primary"

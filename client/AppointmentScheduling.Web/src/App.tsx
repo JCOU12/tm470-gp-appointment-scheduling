@@ -11,6 +11,7 @@ import {
 import { AvailableAppointments } from './components/AvailableAppointments'
 import { BookingPanel } from './components/BookingPanel'
 import { ErrorSummary } from './components/ErrorSummary'
+import { ServiceLayout } from './components/ServiceLayout'
 import { formatAppointmentDateTime } from './formatDateTime'
 import './App.css'
 
@@ -178,24 +179,7 @@ export default function App() {
   const isBookingFormDisabled = isLoadingSlots || isSubmittingBooking
 
   return (
-    <>
-      <a className="skip-link" href="#main-content">
-        Skip to main content
-      </a>
-
-      <header className="service-header">
-        <div className="page-width header-content">
-          <span className="service-mark" aria-hidden="true">
-            GP
-          </span>
-          <div>
-            <span className="service-name">Oakfield Medical Centre</span>
-            <span className="service-description">Appointment service</span>
-          </div>
-        </div>
-      </header>
-
-      <main className="page-width main-content" id="main-content">
+    <ServiceLayout activeArea="patient">
         <section className="intro" aria-labelledby="page-heading">
           <span className="eyebrow">Patient appointments</span>
           <h1 id="page-heading">Book or manage an appointment</h1>
@@ -331,13 +315,6 @@ export default function App() {
             />
           )}
         </section>
-      </main>
-
-      <footer className="service-footer">
-        <div className="page-width">
-          <p>Oakfield Medical Centre appointment service</p>
-        </div>
-      </footer>
-    </>
+    </ServiceLayout>
   )
 }

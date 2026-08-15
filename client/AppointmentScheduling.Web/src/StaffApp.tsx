@@ -1,0 +1,505 @@
+import { useCallback, useEffect, useState } from 'react'
+import { ApiError } from './api/apiClient'
+import {
+  createAvailabilitySession,
+  createUnavailablePeriod,
+  getClinicians,
+  getStaffBookings,
+  type Clinician,
+  type StaffBooking,
+  type StaffBookingFilters,
+} from './api/staffApi'
+import { ErrorSummary } from './components/ErrorSummary'
+import { ServiceLayout } from './components/ServiceLayout'
+import { formatAppointmentDateTime } from './formatDateTime'
+import './App.css'
+
+function errorMessage(error: unknown): string {
+  if (error instanceof ApiError) {
+    return error.message
+  }
+
+  return 'The service could not be reached. Check your connection and try again.'
+}
+
+function localDateTimeToUtc(value: string): string {
+  return new Date(value).toISOString()
+}
+
+function localDateBoundaryToUtc(value: string, followingDay = false): string {
+  const boundary = new Date(`${value}T00:00`)
+
+  if (followingDay) {
+    boundary.setDate(boundary.getDate() + 1)
+  }
+
+  return boundary.toISOString()
+}
+
+export default function StaffApp() {
+  const [clinicians, setClinicians] = useState<Clinician[]>([])
+  const [bookings, setBookings] = useState<StaffBooking[]>([])
+  const [initialError, setInitialError] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [bookingsError, setBookingsError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSubmittingSession, setIsSubmittingSession] = useState(false)
+  const [isSubmittingPeriod, setIsSubmittingPeriod] = useState(false)
+  const [isLoadingBookings, setIsLoadingBookings] = useState(false)
+
+  const [sessionClinicianId, setSessionClinicianId] = useState('')
+  const [sessionStart, setSessionStart] = useState('')
+  const [sessionEnd, setSessionEnd] = useState('')
+  const [slotDuration, setSlotDuration] = useState('15')
+
+  const [periodClinicianId, setPeriodClinicianId] = useState('')
+  const [periodStart, setPeriodStart] = useState('')
+  const [periodEnd, setPeriodEnd] = useState('')
+
+  const [filterClinicianId, setFilterClinicianId] = useState('')
+  const [filterFromDate, setFilterFromDate] = useState('')
+  const [filterToDate, setFilterToDate] = useState('')
+  const [filterStatus, setFilterStatus] = useState('')
+
+  const loadBookings = useCallback(async (filters: StaffBookingFilters = {}) => {
+    setIsLoadingBookings(true)
+    setBookingsError(null)
+
+    try {
+      setBookings(await getStaffBookings(filters))
+    } catch (error) {
+      setBookings([])
+      setBookingsError(errorMessage(error))
+    } finally {
+      setIsLoadingBookings(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    let isCurrent = true
+
+    Promise.all([getClinicians(), getStaffBookings()])
+      .then(([loadedClinicians, loadedBookings]) => {
+        if (isCurrent) {
+          setClinicians(loadedClinicians)
+          setBookings(loadedBookings)
+        }
+      })
+      .catch((error: unknown) => {
+        if (isCurrent) {
+          setInitialError(errorMessage(error))
+        }
+      })
+      .finally(() => {
+        if (isCurrent) {
+          setIsLoading(false)
+        }
+      })
+
+    return () => {
+      isCurrent = false
+    }
+  }, [])
+
+  async function handleCreateSession(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setActionError(null)
+    setSuccessMessage(null)
+
+    const startsAtUtc = localDateTimeToUtc(sessionStart)
+    const endsAtUtc = localDateTimeToUtc(sessionEnd)
+
+    if (endsAtUtc <= startsAtUtc) {
+      setActionError('The session end must be later than its start.')
+      return
+    }
+
+    setIsSubmittingSession(true)
+
+    try {
+      const session = await createAvailabilitySession({
+        clinicianId: Number(sessionClinicianId),
+        startsAtUtc,
+        endsAtUtc,
+        slotDurationMinutes: Number(slotDuration),
+      })
+      setSessionStart('')
+      setSessionEnd('')
+      setSuccessMessage(
+        `Availability session created with ${session.appointmentSlots.length} appointment slots.`,
+      )
+    } catch (error) {
+      setActionError(errorMessage(error))
+    } finally {
+      setIsSubmittingSession(false)
+    }
+  }
+
+  async function handleCreatePeriod(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setActionError(null)
+    setSuccessMessage(null)
+
+    const startsAtUtc = localDateTimeToUtc(periodStart)
+    const endsAtUtc = localDateTimeToUtc(periodEnd)
+
+    if (endsAtUtc <= startsAtUtc) {
+      setActionError('The unavailable period end must be later than its start.')
+      return
+    }
+
+    setIsSubmittingPeriod(true)
+
+    try {
+      await createUnavailablePeriod({
+        clinicianId: Number(periodClinicianId),
+        startsAtUtc,
+        endsAtUtc,
+      })
+      setPeriodStart('')
+      setPeriodEnd('')
+      setSuccessMessage('The clinician unavailable period has been added.')
+    } catch (error) {
+      setActionError(errorMessage(error))
+    } finally {
+      setIsSubmittingPeriod(false)
+    }
+  }
+
+  async function handleBookingFilters(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    const filters: StaffBookingFilters = {}
+
+    if (filterClinicianId !== '') {
+      filters.clinicianId = Number(filterClinicianId)
+    }
+    if (filterFromDate !== '') {
+      filters.fromUtc = localDateBoundaryToUtc(filterFromDate)
+    }
+    if (filterToDate !== '') {
+      filters.toUtc = localDateBoundaryToUtc(filterToDate, true)
+    }
+    if (filterStatus === 'Active' || filterStatus === 'Cancelled') {
+      filters.status = filterStatus
+    }
+
+    await loadBookings(filters)
+  }
+
+  async function clearBookingFilters() {
+    setFilterClinicianId('')
+    setFilterFromDate('')
+    setFilterToDate('')
+    setFilterStatus('')
+    await loadBookings()
+  }
+
+  const formsDisabled = isLoading || clinicians.length === 0
+
+  return (
+    <ServiceLayout activeArea="staff">
+      <section className="intro" aria-labelledby="page-heading">
+        <span className="eyebrow">Staff appointments</span>
+        <h1 id="page-heading">Manage appointment scheduling</h1>
+        <p>
+          Create clinician availability, block unavailable periods and review
+          patient bookings from one place.
+        </p>
+      </section>
+
+      <div aria-live="polite" aria-atomic="true">
+        {successMessage !== null && (
+          <div className="success-message" role="status">
+            <strong>Success</strong>
+            <span>{successMessage}</span>
+          </div>
+        )}
+      </div>
+
+      <ErrorSummary message={initialError ?? actionError} />
+
+      {isLoading && (
+        <p className="loading-message" role="status">
+          Loading staff scheduling data…
+        </p>
+      )}
+
+      <div className="staff-workflow-grid">
+        <section className="panel staff-form-panel" aria-labelledby="session-heading">
+          <span className="eyebrow">Availability</span>
+          <h2 id="session-heading">Create an availability session</h2>
+          <p className="section-introduction">
+            Appointment slots are generated automatically across the session.
+            Times are entered in local time.
+          </p>
+
+          <form onSubmit={(event) => void handleCreateSession(event)}>
+            <div className="form-group">
+              <label htmlFor="session-clinician">Clinician</label>
+              <select
+                id="session-clinician"
+                value={sessionClinicianId}
+                onChange={(event) => setSessionClinicianId(event.target.value)}
+                required
+                disabled={formsDisabled || isSubmittingSession}
+              >
+                <option value="">Select a clinician</option>
+                {clinicians.map((clinician) => (
+                  <option key={clinician.clinicianId} value={clinician.clinicianId}>
+                    {clinician.name} — {clinician.role}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="session-start">Session start</label>
+              <input
+                id="session-start"
+                type="datetime-local"
+                value={sessionStart}
+                onChange={(event) => setSessionStart(event.target.value)}
+                required
+                disabled={isSubmittingSession}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="session-end">Session end</label>
+              <input
+                id="session-end"
+                type="datetime-local"
+                value={sessionEnd}
+                onChange={(event) => setSessionEnd(event.target.value)}
+                required
+                disabled={isSubmittingSession}
+              />
+            </div>
+
+            <div className="form-group compact-field">
+              <label htmlFor="slot-duration">Appointment length in minutes</label>
+              <input
+                id="slot-duration"
+                type="number"
+                min="5"
+                step="5"
+                value={slotDuration}
+                onChange={(event) => setSlotDuration(event.target.value)}
+                required
+                disabled={isSubmittingSession}
+              />
+            </div>
+
+            <button
+              className="button-primary"
+              type="submit"
+              disabled={formsDisabled || isSubmittingSession}
+            >
+              {isSubmittingSession ? 'Creating session…' : 'Create session'}
+            </button>
+          </form>
+        </section>
+
+        <section className="panel staff-form-panel" aria-labelledby="period-heading">
+          <span className="eyebrow">Unavailability</span>
+          <h2 id="period-heading">Add an unavailable period</h2>
+          <p className="section-introduction">
+            Appointments that overlap this period will no longer be offered.
+            Existing active bookings are protected.
+          </p>
+
+          <form onSubmit={(event) => void handleCreatePeriod(event)}>
+            <div className="form-group">
+              <label htmlFor="period-clinician">Clinician</label>
+              <select
+                id="period-clinician"
+                value={periodClinicianId}
+                onChange={(event) => setPeriodClinicianId(event.target.value)}
+                required
+                disabled={formsDisabled || isSubmittingPeriod}
+              >
+                <option value="">Select a clinician</option>
+                {clinicians.map((clinician) => (
+                  <option key={clinician.clinicianId} value={clinician.clinicianId}>
+                    {clinician.name} — {clinician.role}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="period-start">Unavailable from</label>
+              <input
+                id="period-start"
+                type="datetime-local"
+                value={periodStart}
+                onChange={(event) => setPeriodStart(event.target.value)}
+                required
+                disabled={isSubmittingPeriod}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="period-end">Unavailable until</label>
+              <input
+                id="period-end"
+                type="datetime-local"
+                value={periodEnd}
+                onChange={(event) => setPeriodEnd(event.target.value)}
+                required
+                disabled={isSubmittingPeriod}
+              />
+            </div>
+
+            <button
+              className="button-primary"
+              type="submit"
+              disabled={formsDisabled || isSubmittingPeriod}
+            >
+              {isSubmittingPeriod ? 'Adding period…' : 'Add unavailable period'}
+            </button>
+          </form>
+        </section>
+      </div>
+
+      <section className="panel staff-bookings-panel" aria-labelledby="bookings-heading">
+        <div className="section-heading">
+          <div>
+            <span className="eyebrow">Bookings</span>
+            <h2 id="bookings-heading">Review patient bookings</h2>
+          </div>
+          <button
+            className="button-link"
+            type="button"
+            onClick={() => void clearBookingFilters()}
+            disabled={isLoadingBookings}
+          >
+            Clear filters
+          </button>
+        </div>
+
+        <form
+          className="booking-filters"
+          onSubmit={(event) => void handleBookingFilters(event)}
+        >
+          <div className="form-group">
+            <label htmlFor="filter-clinician">Clinician</label>
+            <select
+              id="filter-clinician"
+              value={filterClinicianId}
+              onChange={(event) => setFilterClinicianId(event.target.value)}
+            >
+              <option value="">All clinicians</option>
+              {clinicians.map((clinician) => (
+                <option key={clinician.clinicianId} value={clinician.clinicianId}>
+                  {clinician.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="filter-from-date">From date</label>
+            <input
+              id="filter-from-date"
+              type="date"
+              value={filterFromDate}
+              onChange={(event) => setFilterFromDate(event.target.value)}
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="filter-to-date">To date</label>
+            <input
+              id="filter-to-date"
+              type="date"
+              value={filterToDate}
+              onChange={(event) => setFilterToDate(event.target.value)}
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="filter-status">Status</label>
+            <select
+              id="filter-status"
+              value={filterStatus}
+              onChange={(event) => setFilterStatus(event.target.value)}
+            >
+              <option value="">All statuses</option>
+              <option value="Active">Active</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
+          </div>
+
+          <button
+            className="button-secondary filter-button"
+            type="submit"
+            disabled={isLoadingBookings}
+          >
+            {isLoadingBookings ? 'Loading bookings…' : 'Apply filters'}
+          </button>
+        </form>
+
+        {bookingsError !== null && (
+          <div className="inline-error" role="alert">
+            <p>{bookingsError}</p>
+          </div>
+        )}
+
+        {!isLoading &&
+          initialError === null &&
+          !isLoadingBookings &&
+          bookingsError === null && (
+          <div className="staff-booking-results" aria-live="polite">
+            <p className="result-count">
+              {bookings.length === 1
+                ? '1 booking found'
+                : `${bookings.length} bookings found`}
+            </p>
+
+            {bookings.length === 0 ? (
+              <p className="empty-message">No bookings match these filters.</p>
+            ) : (
+              <div className="table-container">
+                <table>
+                  <caption className="visually-hidden">Patient bookings</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Booking</th>
+                      <th scope="col">Patient</th>
+                      <th scope="col">Clinician</th>
+                      <th scope="col">Appointment</th>
+                      <th scope="col">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bookings.map((booking) => (
+                      <tr key={booking.bookingId}>
+                        <td>{booking.bookingId}</td>
+                        <td>
+                          <strong>{booking.patientDisplayName}</strong>
+                          <span>{booking.patientReference}</span>
+                        </td>
+                        <td>{booking.clinicianName}</td>
+                        <td>{formatAppointmentDateTime(booking.startsAtUtc)}</td>
+                        <td>
+                          <span
+                            className={`status-badge status-${booking.status.toLowerCase()}`}
+                          >
+                            {booking.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+      </section>
+    </ServiceLayout>
+  )
+}

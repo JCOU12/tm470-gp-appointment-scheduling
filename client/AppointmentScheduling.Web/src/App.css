@@ -46,6 +46,33 @@
   display: block;
 }
 
+.service-navigation {
+  border-top: 1px solid rgb(255 255 255 / 30%);
+  background: #004f9e;
+}
+
+.navigation-links {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.navigation-links a {
+  padding: 0.85rem 1rem;
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.navigation-links a:hover {
+  background: #003f7e;
+  text-decoration: underline;
+  text-underline-offset: 0.2rem;
+}
+
+.navigation-links a[aria-current='page'] {
+  box-shadow: inset 0 -0.3rem 0 #ffbf47;
+}
+
 .service-name {
   font-size: 1.25rem;
   font-weight: 700;
@@ -277,7 +304,8 @@ button:disabled {
   line-height: 1.4;
 }
 
-.form-group input {
+.form-group input,
+.form-group select {
   width: 100%;
   min-height: 3rem;
   padding: 0.55rem 0.65rem;
@@ -285,6 +313,14 @@ button:disabled {
   border-radius: 0.15rem;
   background: #fff;
   color: #1d3039;
+}
+
+.form-group select {
+  padding: 0.55rem 2.2rem 0.55rem 0.65rem;
+}
+
+.compact-field {
+  max-width: 18rem;
 }
 
 .selected-appointment {
@@ -428,6 +464,77 @@ button:disabled {
   gap: 0.8rem;
 }
 
+.staff-workflow-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+.staff-form-panel {
+  margin-top: 0;
+}
+
+.staff-bookings-panel {
+  margin-top: 1.5rem;
+}
+
+.booking-filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: end;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.booking-filters .form-group {
+  margin: 0;
+}
+
+.filter-button {
+  justify-self: start;
+}
+
+.result-count {
+  margin: 1.5rem 0 0.75rem;
+  color: #425563;
+  font-weight: 700;
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+}
+
+th,
+td {
+  padding: 0.9rem;
+  border-bottom: 1px solid #d8dde0;
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  background: #e8edee;
+  color: #1d3039;
+  font-size: 0.9rem;
+}
+
+td span:not(.status-badge),
+td strong {
+  display: block;
+}
+
+td span:not(.status-badge) {
+  margin-top: 0.2rem;
+  color: #52636d;
+  font-size: 0.88rem;
+}
+
 .service-footer {
   padding-block: 2rem;
   border-top: 1px solid #c8d0d5;
@@ -469,6 +576,23 @@ button:disabled {
 
   .booking-card-header {
     flex-direction: column;
+  }
+
+  .navigation-links {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .navigation-links a[aria-current='page'] {
+    box-shadow: inset 0.3rem 0 0 #ffbf47;
+  }
+}
+
+@media (max-width: 58rem) {
+  .staff-workflow-grid,
+  .booking-filters {
+    grid-template-columns: 1fr;
   }
 }
 

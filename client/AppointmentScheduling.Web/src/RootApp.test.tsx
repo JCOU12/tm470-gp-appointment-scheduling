@@ -25,8 +25,15 @@ describe('application routes', () => {
     render(<RootApp />)
 
     expect(
-      await screen.findByRole('heading', { name: /book or manage an appointment/i }),
+      await screen.findByRole('heading', {
+        name: /book or manage an appointment/i,
+      }),
     ).toBeInTheDocument()
+    expect(screen.getByRole('banner')).toHaveClass('nhsuk-header')
+    expect(screen.getByRole('contentinfo')).toHaveClass('nhsuk-footer')
+    expect(
+      screen.getByRole('link', { name: /skip to main content/i }),
+    ).toHaveClass('nhsuk-skip-link')
   })
 
   it('shows the staff workflow at the staff path', async () => {
@@ -44,5 +51,6 @@ describe('application routes', () => {
         name: /manage appointment scheduling/i,
       }),
     ).toBeInTheDocument()
+    expect(screen.getByRole('main')).toHaveClass('nhsuk-main-wrapper')
   })
 })

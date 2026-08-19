@@ -19,13 +19,17 @@ export function ErrorSummary({ message }: ErrorSummaryProps) {
 
   return (
     <div
-      className="error-summary"
+      className="nhsuk-error-summary"
+      data-module="nhsuk-error-summary"
       ref={errorReference}
-      role="alert"
       tabIndex={-1}
     >
-      <h2>There is a problem</h2>
-      <p>{message}</p>
+      <div role="alert">
+        <h2 className="nhsuk-error-summary__title">There is a problem</h2>
+        <div className="nhsuk-error-summary__body">
+          <p>{message}</p>
+        </div>
+      </div>
     </div>
   )
 }

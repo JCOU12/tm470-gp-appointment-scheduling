@@ -77,6 +77,7 @@ export function ServiceLayout({ activeArea, children }: ServiceLayoutProps) {
       <main
         className="nhsuk-width-container nhsuk-main-wrapper"
         id="main-content"
+        tabIndex={-1}
       >
         {children}
       </main>

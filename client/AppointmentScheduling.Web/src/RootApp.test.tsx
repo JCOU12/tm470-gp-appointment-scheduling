@@ -1,5 +1,6 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { MemoryRouter } from 'react-router'
 import RootApp from './RootApp'
 
 const fetchMock = vi.fn<typeof fetch>()
@@ -14,19 +15,19 @@ function jsonResponse(body: unknown): Response {
 describe('application routes', () => {
   afterEach(() => {
     cleanup()
-    window.history.replaceState({}, '', '/')
     vi.unstubAllGlobals()
   })
 
   it('shows the patient workflow at the root path', async () => {
-    vi.stubGlobal('fetch', fetchMock.mockResolvedValueOnce(jsonResponse([])))
-    window.history.replaceState({}, '', '/')
-
-    render(<RootApp />)
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <RootApp />
+      </MemoryRouter>,
+    )
 
     expect(
-      await screen.findByRole('heading', {
-        name: /book or manage an appointment/i,
+      screen.getByRole('heading', {
+        name: /manage your appointments/i,
       }),
     ).toBeInTheDocument()
     expect(screen.getByRole('banner')).toHaveClass('nhsuk-header')
@@ -42,9 +43,11 @@ describe('application routes', () => {
       .mockResolvedValueOnce(jsonResponse([]))
       .mockResolvedValueOnce(jsonResponse([]))
     vi.stubGlobal('fetch', fetchMock)
-    window.history.replaceState({}, '', '/staff')
-
-    render(<RootApp />)
+    render(
+      <MemoryRouter initialEntries={['/staff']}>
+        <RootApp />
+      </MemoryRouter>,
+    )
 
     expect(
       await screen.findByRole('heading', {

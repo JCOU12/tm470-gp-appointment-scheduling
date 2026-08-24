@@ -1,5 +1,6 @@
-import { cleanup, render, screen, within } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import type { AvailableAppointmentSlot, Booking } from './api/appointmentApi'
@@ -10,8 +11,8 @@ const availableSlot: AvailableAppointmentSlot = {
   clinicianId: 1,
   clinicianName: 'Dr Maya Patel',
   clinicianRole: 'General Practitioner',
-  startsAtUtc: '2026-08-17T09:10:00Z',
-  endsAtUtc: '2026-08-17T09:30:00Z',
+  startsAtUtc: '2026-08-27T09:10:00Z',
+  endsAtUtc: '2026-08-27T09:30:00Z',
 }
 
 const activeBooking: Booking = {
@@ -20,10 +21,10 @@ const activeBooking: Booking = {
   patientReference: 'PAT-001',
   patientDisplayName: 'Alex Morgan',
   status: 'Active',
-  bookedAtUtc: '2026-08-15T08:00:00Z',
+  bookedAtUtc: '2026-08-24T08:00:00Z',
   cancelledAtUtc: null,
-  startsAtUtc: '2026-08-17T09:10:00Z',
-  endsAtUtc: '2026-08-17T09:30:00Z',
+  startsAtUtc: '2026-08-27T09:10:00Z',
+  endsAtUtc: '2026-08-27T09:30:00Z',
 }
 
 const fetchMock = vi.fn<typeof fetch>()
@@ -35,9 +36,29 @@ function jsonResponse(body: unknown, status = 200): Response {
   })
 }
 
-async function selectSlotAndEnterPatientDetails() {
+function renderApp(path = '/') {
+  return render(
+    <MemoryRouter initialEntries={[path]}>
+      <App />
+    </MemoryRouter>,
+  )
+}
+
+async function reachReviewPage() {
   const user = userEvent.setup()
-  await user.click(await screen.findByRole('radio', { name: /Dr Maya Patel/i }))
+  await user.click(
+    screen.getByRole('link', { name: /^book an appointment$/i }),
+  )
+  const appointment = await screen.findByRole('radio', {
+    name: /Dr Maya Patel/i,
+  })
+  expect(screen.getByRole('main')).toHaveFocus()
+  await user.click(appointment)
+  await user.click(screen.getByRole('button', { name: /continue/i }))
+
+  expect(
+    screen.getByRole('heading', { name: /enter patient details/i }),
+  ).toBeInTheDocument()
   await user.type(
     screen.getByRole('textbox', { name: /^patient reference$/i }),
     'PAT-001',
@@ -46,10 +67,15 @@ async function selectSlotAndEnterPatientDetails() {
     screen.getByRole('textbox', { name: /^patient name$/i }),
     'Alex Morgan',
   )
+  await user.click(screen.getByRole('button', { name: /continue/i }))
+
+  expect(
+    screen.getByRole('heading', { name: /check your appointment details/i }),
+  ).toBeInTheDocument()
   return user
 }
 
-describe('patient appointment workflow', () => {
+describe('patient appointment journey', () => {
   beforeEach(() => {
     fetchMock.mockReset()
     vi.stubGlobal('fetch', fetchMock)
@@ -60,45 +86,43 @@ describe('patient appointment workflow', () => {
     vi.unstubAllGlobals()
   })
 
-  it('loads and displays available appointments', async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse([availableSlot]))
-
-    render(<App />)
+  it('starts with separate booking and management tasks', () => {
+    renderApp()
 
     expect(
-      screen.getByRole('heading', { name: /book or manage an appointment/i }),
+      screen.getByRole('heading', { name: /manage your appointments/i }),
     ).toBeInTheDocument()
-    expect(screen.getByText('Oakfield Medical Centre')).toBeInTheDocument()
     expect(
-      await screen.findByRole('radio', { name: /Dr Maya Patel/i }),
+      screen.getByRole('link', { name: /^book an appointment$/i }),
     ).toBeInTheDocument()
-    expect(fetchMock).toHaveBeenCalledWith(
-      '/api/slots',
-      expect.objectContaining({ headers: expect.any(Object) }),
-    )
+    expect(
+      screen.getByRole('link', { name: /view or cancel a booking/i }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('main')).not.toHaveFocus()
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 
-  it('books the selected appointment and displays confirmation', async () => {
+  it('books an appointment through selection, details and review pages', async () => {
     fetchMock
       .mockResolvedValueOnce(jsonResponse([availableSlot]))
       .mockResolvedValueOnce(jsonResponse(activeBooking, 201))
-      .mockResolvedValueOnce(jsonResponse([]))
-    render(<App />)
-    const user = await selectSlotAndEnterPatientDetails()
+    renderApp()
+    const user = await reachReviewPage()
 
-    await user.click(screen.getByRole('button', { name: /book appointment/i }))
+    expect(screen.getByText('PAT-001')).toBeInTheDocument()
+    await user.click(
+      screen.getByRole('button', { name: /confirm appointment/i }),
+    )
 
     expect(
-      await screen.findByText('Booking 12 has been confirmed.'),
+      await screen.findByRole('heading', { name: /appointment confirmed/i }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('Booking 12 has been confirmed.'),
     ).toBeInTheDocument()
     expect(screen.getByRole('alert')).toHaveClass(
       'nhsuk-notification-banner--success',
     )
-    const bookingCard = screen.getByRole('article')
-    expect(
-      within(bookingCard).getByRole('heading', { name: 'Booking 12' }),
-    ).toBeInTheDocument()
-    expect(within(bookingCard).getByText('Active')).toBeInTheDocument()
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
       '/api/bookings',
@@ -113,7 +137,7 @@ describe('patient appointment workflow', () => {
     )
   })
 
-  it('reports a booking conflict and refreshes stale availability', async () => {
+  it('returns a booking conflict to refreshed appointment selection', async () => {
     fetchMock
       .mockResolvedValueOnce(jsonResponse([availableSlot]))
       .mockResolvedValueOnce(
@@ -123,38 +147,43 @@ describe('patient appointment workflow', () => {
         ),
       )
       .mockResolvedValueOnce(jsonResponse([]))
-    render(<App />)
-    const user = await selectSlotAndEnterPatientDetails()
+    renderApp()
+    const user = await reachReviewPage()
 
-    await user.click(screen.getByRole('button', { name: /book appointment/i }))
-
-    expect(
-      await screen.findByText('The appointment slot has already been booked.'),
-    ).toBeInTheDocument()
-    expect(screen.getByRole('alert').parentElement).toHaveClass(
-      'nhsuk-error-summary',
+    await user.click(
+      screen.getByRole('button', { name: /confirm appointment/i }),
     )
+
     expect(
-      screen.getByText(/there are no appointments available/i),
+      await screen.findByRole('heading', {
+        level: 1,
+        name: /choose an appointment/i,
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('The appointment slot has already been booked.'),
+    ).toBeInTheDocument()
+    expect(
+      await screen.findByText(/there are no appointments available/i),
     ).toBeInTheDocument()
     expect(fetchMock).toHaveBeenCalledTimes(3)
   })
 
-  it('loads and cancels an existing booking after confirmation', async () => {
+  it('finds and cancels a booking on dedicated confirmation pages', async () => {
     const cancelledBooking: Booking = {
       ...activeBooking,
       status: 'Cancelled',
-      cancelledAtUtc: '2026-08-15T09:00:00Z',
+      cancelledAtUtc: '2026-08-24T09:00:00Z',
     }
     fetchMock
-      .mockResolvedValueOnce(jsonResponse([]))
       .mockResolvedValueOnce(jsonResponse(activeBooking))
       .mockResolvedValueOnce(jsonResponse(cancelledBooking))
-      .mockResolvedValueOnce(jsonResponse([availableSlot]))
-    render(<App />)
+    renderApp()
     const user = userEvent.setup()
-    await screen.findByText(/there are no appointments available/i)
 
+    await user.click(
+      screen.getByRole('link', { name: /view or cancel a booking/i }),
+    )
     await user.type(
       screen.getByRole('textbox', { name: /booking reference/i }),
       '12',
@@ -163,6 +192,7 @@ describe('patient appointment workflow', () => {
     await user.click(
       await screen.findByRole('button', { name: /cancel this booking/i }),
     )
+
     expect(
       screen.getByRole('heading', { name: /are you sure/i }),
     ).toBeInTheDocument()
@@ -171,24 +201,22 @@ describe('patient appointment workflow', () => {
     )
 
     expect(
-      await screen.findByText('Booking 12 has been cancelled.'),
+      await screen.findByRole('heading', { name: /appointment cancelled/i }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('Booking 12 has been cancelled.'),
     ).toBeInTheDocument()
     expect(screen.getByText('Cancelled')).toBeInTheDocument()
-    expect(
-      screen.queryByRole('button', { name: /cancel this booking/i }),
-    ).not.toBeInTheDocument()
     expect(fetchMock).toHaveBeenNthCalledWith(
-      3,
+      2,
       '/api/bookings/12/cancel',
       expect.objectContaining({ method: 'POST' }),
     )
   })
 
-  it('validates a booking reference before calling the API', async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse([]))
-    render(<App />)
+  it('validates a booking reference before navigating to a booking', async () => {
+    renderApp('/bookings')
     const user = userEvent.setup()
-    await screen.findByText(/there are no appointments available/i)
 
     await user.type(
       screen.getByRole('textbox', { name: /booking reference/i }),
@@ -199,7 +227,7 @@ describe('patient appointment workflow', () => {
     expect(
       screen.getByText(/enter a valid booking reference greater than zero/i),
     ).toBeInTheDocument()
-    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 
   it('allows availability loading to be retried after an API error', async () => {
@@ -211,7 +239,7 @@ describe('patient appointment workflow', () => {
         ),
       )
       .mockResolvedValueOnce(jsonResponse([availableSlot]))
-    render(<App />)
+    renderApp('/appointments')
 
     expect(
       await screen.findByText('Appointments are temporarily unavailable.'),
@@ -223,5 +251,17 @@ describe('patient appointment workflow', () => {
       await screen.findByRole('radio', { name: /Dr Maya Patel/i }),
     ).toBeInTheDocument()
     expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('redirects an incomplete journey to appointment selection', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse([]))
+    renderApp('/appointments/review')
+
+    expect(
+      await screen.findByRole('heading', {
+        level: 1,
+        name: /choose an appointment/i,
+      }),
+    ).toBeInTheDocument()
   })
 })

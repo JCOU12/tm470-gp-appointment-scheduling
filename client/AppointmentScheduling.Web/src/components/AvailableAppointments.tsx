@@ -30,7 +30,7 @@ export function AvailableAppointments({
               className="nhsuk-card__heading nhsuk-heading-l"
               id="available-heading"
             >
-              Choose an appointment
+              Available appointments
             </h2>
           </div>
           <button

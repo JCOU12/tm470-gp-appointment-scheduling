@@ -12,6 +12,7 @@ import { AvailableAppointments } from './components/AvailableAppointments'
 import { BookingPanel } from './components/BookingPanel'
 import { ErrorSummary } from './components/ErrorSummary'
 import { ServiceLayout } from './components/ServiceLayout'
+import { SuccessMessage } from './components/SuccessMessage'
 import { formatAppointmentDateTime } from './formatDateTime'
 import './App.css'
 
@@ -180,51 +181,58 @@ export default function App() {
 
   return (
     <ServiceLayout activeArea="patient">
-        <section className="intro" aria-labelledby="page-heading">
-          <span className="eyebrow">Patient appointments</span>
-          <h1 id="page-heading">Book or manage an appointment</h1>
-          <p>
-            Choose an available appointment, enter your details and receive
-            immediate confirmation. You can also view or cancel an existing
-            booking.
-          </p>
-        </section>
+      <section
+        className="intro nhsuk-u-reading-width"
+        aria-labelledby="page-heading"
+      >
+        <span className="nhsuk-caption-l">Patient appointments</span>
+        <h1 className="nhsuk-heading-xl" id="page-heading">
+          Book or manage an appointment
+        </h1>
+        <p className="nhsuk-body-l">
+          Choose an available appointment, enter your details and receive
+          immediate confirmation. You can also view or cancel an existing
+          booking.
+        </p>
+      </section>
 
-        <div aria-live="polite" aria-atomic="true">
-          {successMessage !== null && (
-            <div className="success-message" role="status">
-              <strong>Success</strong>
-              <span>{successMessage}</span>
-            </div>
-          )}
-        </div>
+      <SuccessMessage message={successMessage} />
 
-        <ErrorSummary message={actionError} />
+      <ErrorSummary message={actionError} />
 
-        <AvailableAppointments
-          slots={slots}
-          selectedSlotId={selectedSlotId}
-          isLoading={isLoadingSlots}
-          error={slotError}
-          disabled={isSubmittingBooking}
-          onSelect={(slotId) => {
-            setSelectedSlotId(slotId)
-            setActionError(null)
-            setSuccessMessage(null)
-          }}
-          onRetry={() => void loadSlots()}
-        />
+      <AvailableAppointments
+        slots={slots}
+        selectedSlotId={selectedSlotId}
+        isLoading={isLoadingSlots}
+        error={slotError}
+        disabled={isSubmittingBooking}
+        onSelect={(slotId) => {
+          setSelectedSlotId(slotId)
+          setActionError(null)
+          setSuccessMessage(null)
+        }}
+        onRetry={() => void loadSlots()}
+      />
 
-        <section className="panel" aria-labelledby="details-heading">
-          <span className="step-label">Step 2</span>
-          <h2 id="details-heading">Enter patient details</h2>
-          <p className="section-introduction">
+      <section className="nhsuk-card panel" aria-labelledby="details-heading">
+        <div className="nhsuk-card__content">
+          <span className="nhsuk-caption-m">Step 2</span>
+          <h2
+            className="nhsuk-card__heading nhsuk-heading-l"
+            id="details-heading"
+          >
+            Enter patient details
+          </h2>
+          <p className="nhsuk-card__description section-introduction">
             Enter your patient reference and name so that we can confirm your
             appointment.
           </p>
 
           {selectedSlot !== null && (
-            <div className="selected-appointment" role="status">
+            <div
+              className="nhsuk-inset-text selected-appointment"
+              role="status"
+            >
               <strong>Selected appointment</strong>
               <span>
                 {formatAppointmentDateTime(selectedSlot.startsAtUtc)} with{' '}
@@ -234,12 +242,15 @@ export default function App() {
           )}
 
           <form onSubmit={(event) => void handleCreateBooking(event)}>
-            <div className="form-group">
-              <label htmlFor="patient-reference">Patient reference</label>
-              <span className="form-hint" id="patient-reference-hint">
+            <div className="nhsuk-form-group form-group">
+              <label className="nhsuk-label" htmlFor="patient-reference">
+                Patient reference
+              </label>
+              <div className="nhsuk-hint" id="patient-reference-hint">
                 For example, PAT-001
-              </span>
+              </div>
               <input
+                className="nhsuk-input nhsuk-input--width-20"
                 id="patient-reference"
                 aria-describedby="patient-reference-hint"
                 value={patientReference}
@@ -250,9 +261,12 @@ export default function App() {
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="patient-name">Patient name</label>
+            <div className="nhsuk-form-group form-group">
+              <label className="nhsuk-label" htmlFor="patient-name">
+                Patient name
+              </label>
               <input
+                className="nhsuk-input nhsuk-input--width-20"
                 id="patient-name"
                 value={patientDisplayName}
                 onChange={(event) => setPatientDisplayName(event.target.value)}
@@ -263,28 +277,43 @@ export default function App() {
             </div>
 
             <button
-              className="button-primary"
+              className="nhsuk-button"
               type="submit"
               disabled={isBookingFormDisabled}
             >
-              {isSubmittingBooking ? 'Booking appointment…' : 'Book appointment'}
+              {isSubmittingBooking
+                ? 'Booking appointment…'
+                : 'Book appointment'}
             </button>
           </form>
-        </section>
+        </div>
+      </section>
 
-        <section className="panel manage-panel" aria-labelledby="manage-heading">
-          <span className="eyebrow">Existing booking</span>
-          <h2 id="manage-heading">View or cancel a booking</h2>
+      <section
+        className="nhsuk-card panel manage-panel"
+        aria-labelledby="manage-heading"
+      >
+        <div className="nhsuk-card__content">
+          <span className="nhsuk-caption-m">Existing booking</span>
+          <h2
+            className="nhsuk-card__heading nhsuk-heading-l"
+            id="manage-heading"
+          >
+            View or cancel a booking
+          </h2>
           <form
             className="lookup-form"
             onSubmit={(event) => void handleBookingLookup(event)}
           >
-            <div className="form-group lookup-field">
-              <label htmlFor="booking-reference">Booking reference</label>
-              <span className="form-hint" id="booking-reference-hint">
+            <div className="nhsuk-form-group form-group lookup-field">
+              <label className="nhsuk-label" htmlFor="booking-reference">
+                Booking reference
+              </label>
+              <div className="nhsuk-hint" id="booking-reference-hint">
                 Enter the number shown in the booking confirmation.
-              </span>
+              </div>
               <input
+                className="nhsuk-input nhsuk-input--width-10"
                 id="booking-reference"
                 aria-describedby="booking-reference-hint"
                 inputMode="numeric"
@@ -296,7 +325,7 @@ export default function App() {
               />
             </div>
             <button
-              className="button-secondary lookup-button"
+              className="nhsuk-button nhsuk-button--secondary lookup-button"
               type="submit"
               disabled={isLoadingBooking}
             >
@@ -314,7 +343,8 @@ export default function App() {
               onConfirmCancellation={() => void handleCancellation()}
             />
           )}
-        </section>
+        </div>
+      </section>
     </ServiceLayout>
   )
 }

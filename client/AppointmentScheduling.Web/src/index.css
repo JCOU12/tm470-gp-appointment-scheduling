@@ -1,13 +1,4 @@
-:root {
-  color: #263238;
-  background: #f4f7f8;
-  font-family:
-    Arial,
-    Helvetica,
-    sans-serif;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-}
+@import "nhsuk-frontend/dist/nhsuk/nhsuk-frontend.css";
 
 * {
   box-sizing: border-box;
@@ -15,33 +6,9 @@
 
 html {
   min-width: 320px;
-  background: #f4f7f8;
 }
 
 body {
   min-width: 320px;
   min-height: 100vh;
-  margin: 0;
-}
-
-button,
-input,
-select {
-  font: inherit;
-}
-
-button {
-  min-height: 44px;
-}
-
-button:focus-visible,
-input:focus-visible,
-select:focus-visible,
-a:focus-visible {
-  outline: 4px solid #ffbf47;
-  outline-offset: 2px;
-}
-
-a {
-  color: #005eb8;
 }

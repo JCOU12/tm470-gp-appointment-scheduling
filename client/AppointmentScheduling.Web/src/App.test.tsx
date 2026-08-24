@@ -2,10 +2,7 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
-import type {
-  AvailableAppointmentSlot,
-  Booking,
-} from './api/appointmentApi'
+import type { AvailableAppointmentSlot, Booking } from './api/appointmentApi'
 
 const availableSlot: AvailableAppointmentSlot = {
   appointmentSlotId: 42,
@@ -40,9 +37,7 @@ function jsonResponse(body: unknown, status = 200): Response {
 
 async function selectSlotAndEnterPatientDetails() {
   const user = userEvent.setup()
-  await user.click(
-    await screen.findByRole('radio', { name: /Dr Maya Patel/i }),
-  )
+  await user.click(await screen.findByRole('radio', { name: /Dr Maya Patel/i }))
   await user.type(
     screen.getByRole('textbox', { name: /^patient reference$/i }),
     'PAT-001',
@@ -96,6 +91,9 @@ describe('patient appointment workflow', () => {
     expect(
       await screen.findByText('Booking 12 has been confirmed.'),
     ).toBeInTheDocument()
+    expect(screen.getByRole('alert')).toHaveClass(
+      'nhsuk-notification-banner--success',
+    )
     const bookingCard = screen.getByRole('article')
     expect(
       within(bookingCard).getByRole('heading', { name: 'Booking 12' }),
@@ -133,6 +131,9 @@ describe('patient appointment workflow', () => {
     expect(
       await screen.findByText('The appointment slot has already been booked.'),
     ).toBeInTheDocument()
+    expect(screen.getByRole('alert').parentElement).toHaveClass(
+      'nhsuk-error-summary',
+    )
     expect(
       screen.getByText(/there are no appointments available/i),
     ).toBeInTheDocument()
@@ -204,7 +205,10 @@ describe('patient appointment workflow', () => {
   it('allows availability loading to be retried after an API error', async () => {
     fetchMock
       .mockResolvedValueOnce(
-        jsonResponse({ detail: 'Appointments are temporarily unavailable.' }, 503),
+        jsonResponse(
+          { detail: 'Appointments are temporarily unavailable.' },
+          503,
+        ),
       )
       .mockResolvedValueOnce(jsonResponse([availableSlot]))
     render(<App />)

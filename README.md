@@ -28,7 +28,7 @@ The main technical concern is booking integrity, particularly preventing more th
 
 ## Technical stack
 
-- React and TypeScript frontend
+- React and TypeScript frontend using the NHS.UK frontend design system library
 - ASP.NET Core Web API
 - Entity Framework Core
 - SQLite
@@ -47,7 +47,7 @@ The proof of concept:
 
 ## Current status
 
-The API currently supports clinician data, validated availability sessions, unavailable periods, generated appointment slots, transactional booking creation, booking retrieval, cancellation and staff booking queries. The React interface supports patient booking and cancellation alongside staff availability creation, unavailable periods and filtered booking review. The automated suites cover backend domain, persistence, controller and concurrency behaviour alongside patient and staff frontend workflows.
+The API currently supports clinician data, validated availability sessions, unavailable periods, generated appointment slots, transactional booking creation, booking retrieval, cancellation and staff booking queries. The React interface supports patient booking and cancellation alongside staff availability creation, unavailable periods and filtered booking review. Its shared layout, forms, feedback and content components follow NHS.UK frontend patterns. The automated suites cover backend domain, persistence, controller and concurrency behaviour alongside patient and staff frontend workflows.
 
 ## Run locally
 

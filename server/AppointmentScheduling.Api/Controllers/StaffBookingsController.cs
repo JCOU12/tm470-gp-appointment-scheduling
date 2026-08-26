@@ -62,7 +62,7 @@ public sealed class StaffBookingsController : ControllerBase
         var clinician = slot.AvailabilitySession.Clinician;
 
         return new StaffBookingResponse(
-            booking.BookingId,
+            booking.Reference,
             booking.Status.ToString(),
             booking.BookedAtUtc,
             booking.CancelledAtUtc,
@@ -71,7 +71,6 @@ public sealed class StaffBookingsController : ControllerBase
             slot.EndsAtUtc,
             clinician.ClinicianId,
             clinician.Name,
-            booking.Patient.Reference,
             booking.Patient.DisplayName);
     }
 }

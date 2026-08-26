@@ -4,6 +4,8 @@ public class Booking
 {
     public int BookingId { get; set; }
 
+    public string Reference { get; set; } = string.Empty;
+
     public int AppointmentSlotId { get; set; }
 
     public int PatientId { get; set; }

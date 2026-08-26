@@ -4,8 +4,6 @@ public class Patient
 {
     public int PatientId { get; set; }
 
-    public string Reference { get; set; } = string.Empty;
-
     public string DisplayName { get; set; } = string.Empty;
 
     public ICollection<Booking> Bookings { get; set; } = new List<Booking>();

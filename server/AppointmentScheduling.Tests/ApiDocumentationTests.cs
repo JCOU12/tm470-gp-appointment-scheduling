@@ -55,11 +55,11 @@ public sealed class ApiDocumentationTests :
         AssertOperationHasSummary(paths, "/api/bookings", "post");
         AssertOperationHasSummary(
             paths,
-            "/api/bookings/{bookingId}",
+            "/api/bookings/{bookingReference}",
             "get");
         AssertOperationHasSummary(
             paths,
-            "/api/bookings/{bookingId}/cancel",
+            "/api/bookings/{bookingReference}/cancel",
             "post");
         AssertOperationHasSummary(paths, "/api/staff/sessions", "post");
         AssertOperationHasSummary(

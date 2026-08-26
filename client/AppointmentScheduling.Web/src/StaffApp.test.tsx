@@ -18,7 +18,7 @@ const clinicians: Clinician[] = [
 ]
 
 const activeBooking: StaffBooking = {
-  bookingId: 12,
+  bookingReference: 'APT-7K4M9Q2R',
   status: 'Active',
   bookedAtUtc: '2026-08-15T08:00:00Z',
   cancelledAtUtc: null,
@@ -27,7 +27,6 @@ const activeBooking: StaffBooking = {
   endsAtUtc: '2026-08-20T08:15:00Z',
   clinicianId: 1,
   clinicianName: 'Dr Maya Patel',
-  patientReference: 'PAT-001',
   patientDisplayName: 'Alex Morgan',
 }
 
@@ -66,7 +65,7 @@ describe('staff appointment workflow', () => {
       screen.getByRole('heading', { name: /manage appointment scheduling/i }),
     ).toBeInTheDocument()
     expect(await screen.findByText('Alex Morgan')).toBeInTheDocument()
-    expect(screen.getByText('PAT-001')).toBeInTheDocument()
+    expect(screen.getByText('APT-7K4M9Q2R')).toBeInTheDocument()
     expect(screen.getByText('1 booking found')).toBeInTheDocument()
     expect(
       screen.getByRole('link', { name: /staff scheduling/i }),

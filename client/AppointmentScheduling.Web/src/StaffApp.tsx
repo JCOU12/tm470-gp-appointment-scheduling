@@ -597,11 +597,10 @@ export default function StaffApp() {
                       </thead>
                       <tbody>
                         {bookings.map((booking) => (
-                          <tr key={booking.bookingId}>
-                            <td>{booking.bookingId}</td>
+                          <tr key={booking.bookingReference}>
+                            <td>{booking.bookingReference}</td>
                             <td>
                               <strong>{booking.patientDisplayName}</strong>
-                              <span>{booking.patientReference}</span>
                             </td>
                             <td>{booking.clinicianName}</td>
                             <td>

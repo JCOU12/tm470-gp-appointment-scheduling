@@ -37,7 +37,7 @@ public sealed class StaffBookingsControllerTests
                 Assert.Equal("Cancelled", booking.Status);
                 Assert.Equal(2, booking.ClinicianId);
                 Assert.Equal("Dr Daniel Brooks", booking.ClinicianName);
-                Assert.Equal("PAT-002", booking.PatientReference);
+                Assert.Equal("APT-3BCDEFGH", booking.BookingReference);
                 Assert.Equal(UtcDateTime(9, 30), booking.StartsAtUtc);
                 Assert.NotNull(booking.CancelledAtUtc);
             },
@@ -46,7 +46,7 @@ public sealed class StaffBookingsControllerTests
                 Assert.Equal("Active", booking.Status);
                 Assert.Equal(1, booking.ClinicianId);
                 Assert.Equal("Dr Maya Patel", booking.ClinicianName);
-                Assert.Equal("PAT-001", booking.PatientReference);
+                Assert.Equal("APT-2BCDEFGH", booking.BookingReference);
                 Assert.Equal("Alex Morgan", booking.PatientDisplayName);
                 Assert.Equal(UtcDateTime(10, 0), booking.StartsAtUtc);
                 Assert.Null(booking.CancelledAtUtc);
@@ -142,17 +142,17 @@ public sealed class StaffBookingsControllerTests
     {
         dbContext.Bookings.AddRange(
             CreateBooking(
+                bookingReference: "APT-2BCDEFGH",
                 clinicianId: 1,
                 hour: 10,
                 minute: 0,
-                patientReference: "PAT-001",
                 patientDisplayName: "Alex Morgan",
                 status: BookingStatus.Active),
             CreateBooking(
+                bookingReference: "APT-3BCDEFGH",
                 clinicianId: 2,
                 hour: 9,
                 minute: 30,
-                patientReference: "PAT-002",
                 patientDisplayName: "Sam Taylor",
                 status: BookingStatus.Cancelled));
         await dbContext.SaveChangesAsync();
@@ -160,10 +160,10 @@ public sealed class StaffBookingsControllerTests
     }
 
     private static Booking CreateBooking(
+        string bookingReference,
         int clinicianId,
         int hour,
         int minute,
-        string patientReference,
         string patientDisplayName,
         BookingStatus status)
     {
@@ -184,10 +184,10 @@ public sealed class StaffBookingsControllerTests
 
         return new Booking
         {
+            Reference = bookingReference,
             AppointmentSlot = slot,
             Patient = new Patient
             {
-                Reference = patientReference,
                 DisplayName = patientDisplayName
             },
             Status = status,

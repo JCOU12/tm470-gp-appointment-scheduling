@@ -79,10 +79,10 @@ public sealed class AppointmentSlotsControllerTests
         dbContext.Bookings.Add(
             new Booking
             {
+                Reference = "APT-2BCDEFGH",
                 AppointmentSlotId = bookedSlot.AppointmentSlotId,
                 Patient = new Patient
                 {
-                    Reference = "PAT-001",
                     DisplayName = "Alex Morgan"
                 },
                 BookedAtUtc = UtcNow

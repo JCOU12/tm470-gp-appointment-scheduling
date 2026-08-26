@@ -13,6 +13,7 @@ builder.Services.AddDbContext<AppointmentDbContext>(options =>
             "Connection string 'AppointmentDatabase' was not found.")));
 
 builder.Services.AddSingleton<AppointmentSlotGenerator>();
+builder.Services.AddSingleton<BookingReferenceGenerator>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<AvailabilitySessionService>();
 builder.Services.AddScoped<BookingService>();

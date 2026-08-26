@@ -23,16 +23,17 @@ public sealed class BookingsControllerTests
         var controller = CreateController(dbContext);
         var request = new CreateBookingRequest(
             slot.AppointmentSlotId,
-            " pat-001 ",
             " Alex Morgan ");
 
         var result = await controller.Create(request, CancellationToken.None);
 
         var createdResult = Assert.IsType<CreatedResult>(result.Result);
         var response = Assert.IsType<BookingResponse>(createdResult.Value);
-        Assert.Equal($"/api/bookings/{response.BookingId}", createdResult.Location);
+        Assert.Matches("^APT-[A-Z2-9]{8}$", response.BookingReference);
+        Assert.Equal(
+            $"/api/bookings/{response.BookingReference}",
+            createdResult.Location);
         Assert.Equal(slot.AppointmentSlotId, response.AppointmentSlotId);
-        Assert.Equal("PAT-001", response.PatientReference);
         Assert.Equal("Alex Morgan", response.PatientDisplayName);
         Assert.Equal("Active", response.Status);
         Assert.Equal(UtcNow, response.BookedAtUtc);
@@ -45,8 +46,9 @@ public sealed class BookingsControllerTests
             .AsNoTracking()
             .Include(item => item.Patient)
             .SingleAsync();
+        Assert.Equal(response.BookingReference, booking.Reference);
         Assert.Equal(BookingStatus.Active, booking.Status);
-        Assert.Equal("PAT-001", booking.Patient.Reference);
+        Assert.Equal("Alex Morgan", booking.Patient.DisplayName);
     }
 
     [Fact]
@@ -58,10 +60,10 @@ public sealed class BookingsControllerTests
         var controller = CreateController(dbContext);
 
         var firstResult = await controller.Create(
-            new CreateBookingRequest(slot.AppointmentSlotId, "PAT-001", "Alex"),
+            new CreateBookingRequest(slot.AppointmentSlotId, "Alex"),
             CancellationToken.None);
         var secondResult = await controller.Create(
-            new CreateBookingRequest(slot.AppointmentSlotId, "PAT-002", "Sam"),
+            new CreateBookingRequest(slot.AppointmentSlotId, "Sam"),
             CancellationToken.None);
 
         Assert.IsType<CreatedResult>(firstResult.Result);
@@ -81,7 +83,7 @@ public sealed class BookingsControllerTests
         var controller = CreateController(dbContext);
 
         var result = await controller.Create(
-            new CreateBookingRequest(999, "PAT-001", "Alex"),
+            new CreateBookingRequest(999, "Alex"),
             CancellationToken.None);
 
         var notFound = Assert.IsType<ObjectResult>(result.Result);
@@ -99,7 +101,7 @@ public sealed class BookingsControllerTests
         var controller = CreateController(dbContext);
 
         var result = await controller.Create(
-            new CreateBookingRequest(slot.AppointmentSlotId, "PAT-001", "Alex"),
+            new CreateBookingRequest(slot.AppointmentSlotId, "Alex"),
             CancellationToken.None);
 
         var conflict = Assert.IsType<ObjectResult>(result.Result);
@@ -116,7 +118,7 @@ public sealed class BookingsControllerTests
         var controller = CreateController(dbContext);
 
         var result = await controller.Create(
-            new CreateBookingRequest(slot.AppointmentSlotId, "PAT-001", "Alex"),
+            new CreateBookingRequest(slot.AppointmentSlotId, "Alex"),
             CancellationToken.None);
 
         var conflict = Assert.IsType<ObjectResult>(result.Result);
@@ -141,7 +143,7 @@ public sealed class BookingsControllerTests
         var controller = CreateController(dbContext);
 
         var result = await controller.Create(
-            new CreateBookingRequest(slot.AppointmentSlotId, "PAT-001", "Alex"),
+            new CreateBookingRequest(slot.AppointmentSlotId, "Alex"),
             CancellationToken.None);
 
         var conflict = Assert.IsType<ObjectResult>(result.Result);
@@ -150,12 +152,10 @@ public sealed class BookingsControllerTests
     }
 
     [Theory]
-    [InlineData(0, "PAT-001", "Alex")]
-    [InlineData(1, "", "Alex")]
-    [InlineData(1, "PAT-001", " ")]
+    [InlineData(0, "Alex")]
+    [InlineData(1, " ")]
     public async Task Create_InvalidRequest_ReturnsBadRequest(
         int slotId,
-        string patientReference,
         string patientDisplayName)
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
@@ -163,10 +163,7 @@ public sealed class BookingsControllerTests
         var controller = CreateController(dbContext);
 
         var result = await controller.Create(
-            new CreateBookingRequest(
-                slotId,
-                patientReference,
-                patientDisplayName),
+            new CreateBookingRequest(slotId, patientDisplayName),
             CancellationToken.None);
 
         var badRequest = Assert.IsType<ObjectResult>(result.Result);
@@ -175,48 +172,20 @@ public sealed class BookingsControllerTests
     }
 
     [Fact]
-    public async Task Create_ExistingPatientReference_ReusesPatient()
-    {
-        await using var connection = new SqliteConnection("Data Source=:memory:");
-        await using var dbContext = await CreateMigratedContextAsync(connection);
-        dbContext.Patients.Add(
-            new Patient
-            {
-                Reference = "PAT-001",
-                DisplayName = "Alex Morgan"
-            });
-        await dbContext.SaveChangesAsync();
-        var slot = await CreateSlotAsync(dbContext, clinicianId: 1, hour: 9, minute: 10);
-        var controller = CreateController(dbContext);
-
-        var result = await controller.Create(
-            new CreateBookingRequest(slot.AppointmentSlotId, "pat-001", "Different Name"),
-            CancellationToken.None);
-
-        var created = Assert.IsType<CreatedResult>(result.Result);
-        var response = Assert.IsType<BookingResponse>(created.Value);
-        Assert.Equal("Alex Morgan", response.PatientDisplayName);
-        Assert.Equal(1, await dbContext.Patients.CountAsync());
-    }
-
-    [Fact]
-    public async Task GetById_ExistingBooking_ReturnsStoredBooking()
+    public async Task GetByReference_ExistingBooking_ReturnsStoredBooking()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
         await using var dbContext = await CreateMigratedContextAsync(connection);
         var slot = await CreateSlotAsync(dbContext, clinicianId: 1, hour: 9, minute: 10);
         var controller = CreateController(dbContext);
         var createResult = await controller.Create(
-            new CreateBookingRequest(
-                slot.AppointmentSlotId,
-                "PAT-001",
-                "Alex Morgan"),
+            new CreateBookingRequest(slot.AppointmentSlotId, "Alex Morgan"),
             CancellationToken.None);
         var created = Assert.IsType<CreatedResult>(createResult.Result);
         var createdResponse = Assert.IsType<BookingResponse>(created.Value);
 
-        var result = await controller.GetById(
-            createdResponse.BookingId,
+        var result = await controller.GetByReference(
+            $" {createdResponse.BookingReference.ToLowerInvariant()} ",
             CancellationToken.None);
 
         var ok = Assert.IsType<OkObjectResult>(result.Result);
@@ -225,7 +194,7 @@ public sealed class BookingsControllerTests
     }
 
     [Fact]
-    public async Task GetById_CancelledBooking_ReturnsCancellationDetails()
+    public async Task GetByReference_CancelledBooking_ReturnsCancellationDetails()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
         await using var dbContext = await CreateMigratedContextAsync(connection);
@@ -233,12 +202,9 @@ public sealed class BookingsControllerTests
         var cancelledAtUtc = UtcDateTime(9, 5);
         var booking = new Booking
         {
+            Reference = "APT-2BCDEFGH",
             AppointmentSlotId = slot.AppointmentSlotId,
-            Patient = new Patient
-            {
-                Reference = "PAT-001",
-                DisplayName = "Alex Morgan"
-            },
+            Patient = new Patient { DisplayName = "Alex Morgan" },
             Status = BookingStatus.Cancelled,
             BookedAtUtc = UtcDateTime(9, 1),
             CancelledAtUtc = cancelledAtUtc
@@ -248,25 +214,27 @@ public sealed class BookingsControllerTests
         dbContext.ChangeTracker.Clear();
         var controller = CreateController(dbContext);
 
-        var result = await controller.GetById(
-            booking.BookingId,
+        var result = await controller.GetByReference(
+            booking.Reference,
             CancellationToken.None);
 
         var ok = Assert.IsType<OkObjectResult>(result.Result);
         var response = Assert.IsType<BookingResponse>(ok.Value);
         Assert.Equal("Cancelled", response.Status);
         Assert.Equal(cancelledAtUtc, response.CancelledAtUtc);
-        Assert.Equal("PAT-001", response.PatientReference);
+        Assert.Equal("Alex Morgan", response.PatientDisplayName);
     }
 
     [Fact]
-    public async Task GetById_MissingBooking_ReturnsNotFound()
+    public async Task GetByReference_MissingBooking_ReturnsNotFound()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
         await using var dbContext = await CreateMigratedContextAsync(connection);
         var controller = CreateController(dbContext);
 
-        var result = await controller.GetById(999, CancellationToken.None);
+        var result = await controller.GetByReference(
+            "APT-2BCDEFGH",
+            CancellationToken.None);
 
         var notFound = Assert.IsType<ObjectResult>(result.Result);
         Assert.Equal(StatusCodes.Status404NotFound, notFound.StatusCode);
@@ -275,16 +243,19 @@ public sealed class BookingsControllerTests
     }
 
     [Theory]
-    [InlineData(0)]
-    [InlineData(-1)]
-    public async Task GetById_InvalidBookingId_ReturnsBadRequest(int bookingId)
+    [InlineData("")]
+    [InlineData("12")]
+    [InlineData("BOOK-2BCDEFGH")]
+    [InlineData("APT-TOO-SHORT")]
+    public async Task GetByReference_InvalidReference_ReturnsBadRequest(
+        string bookingReference)
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
         await using var dbContext = await CreateMigratedContextAsync(connection);
         var controller = CreateController(dbContext);
 
-        var result = await controller.GetById(
-            bookingId,
+        var result = await controller.GetByReference(
+            bookingReference,
             CancellationToken.None);
 
         var badRequest = Assert.IsType<ObjectResult>(result.Result);
@@ -301,17 +272,14 @@ public sealed class BookingsControllerTests
         var slot = await CreateSlotAsync(dbContext, clinicianId: 1, hour: 9, minute: 10);
         var controller = CreateController(dbContext);
         var createResult = await controller.Create(
-            new CreateBookingRequest(
-                slot.AppointmentSlotId,
-                "PAT-001",
-                "Alex Morgan"),
+            new CreateBookingRequest(slot.AppointmentSlotId, "Alex Morgan"),
             CancellationToken.None);
         var created = Assert.IsType<CreatedResult>(createResult.Result);
         var createdResponse = Assert.IsType<BookingResponse>(created.Value);
         dbContext.ChangeTracker.Clear();
 
         var cancelResult = await controller.Cancel(
-            createdResponse.BookingId,
+            createdResponse.BookingReference,
             CancellationToken.None);
 
         var ok = Assert.IsType<OkObjectResult>(cancelResult.Result);
@@ -322,15 +290,12 @@ public sealed class BookingsControllerTests
         dbContext.ChangeTracker.Clear();
         var persistedBooking = await dbContext.Bookings
             .AsNoTracking()
-            .SingleAsync(item => item.BookingId == createdResponse.BookingId);
+            .SingleAsync(item => item.Reference == createdResponse.BookingReference);
         Assert.Equal(BookingStatus.Cancelled, persistedBooking.Status);
         Assert.Equal(UtcNow, persistedBooking.CancelledAtUtc);
 
         var replacementResult = await controller.Create(
-            new CreateBookingRequest(
-                slot.AppointmentSlotId,
-                "PAT-002",
-                "Sam Taylor"),
+            new CreateBookingRequest(slot.AppointmentSlotId, "Sam Taylor"),
             CancellationToken.None);
 
         Assert.IsType<CreatedResult>(replacementResult.Result);
@@ -352,21 +317,18 @@ public sealed class BookingsControllerTests
         var slot = await CreateSlotAsync(dbContext, clinicianId: 1, hour: 9, minute: 10);
         var controller = CreateController(dbContext);
         var createResult = await controller.Create(
-            new CreateBookingRequest(
-                slot.AppointmentSlotId,
-                "PAT-001",
-                "Alex Morgan"),
+            new CreateBookingRequest(slot.AppointmentSlotId, "Alex Morgan"),
             CancellationToken.None);
         var created = Assert.IsType<CreatedResult>(createResult.Result);
         var createdResponse = Assert.IsType<BookingResponse>(created.Value);
         var firstCancellation = await controller.Cancel(
-            createdResponse.BookingId,
+            createdResponse.BookingReference,
             CancellationToken.None);
         Assert.IsType<OkObjectResult>(firstCancellation.Result);
         dbContext.ChangeTracker.Clear();
 
         var result = await controller.Cancel(
-            createdResponse.BookingId,
+            createdResponse.BookingReference,
             CancellationToken.None);
 
         var conflict = Assert.IsType<ObjectResult>(result.Result);
@@ -383,12 +345,9 @@ public sealed class BookingsControllerTests
         var slot = await CreateSlotAsync(dbContext, clinicianId: 1, hour: 8, minute: 50);
         var booking = new Booking
         {
+            Reference = "APT-2BCDEFGH",
             AppointmentSlotId = slot.AppointmentSlotId,
-            Patient = new Patient
-            {
-                Reference = "PAT-001",
-                DisplayName = "Alex Morgan"
-            },
+            Patient = new Patient { DisplayName = "Alex Morgan" },
             BookedAtUtc = UtcDateTime(8, 40)
         };
         dbContext.Bookings.Add(booking);
@@ -397,7 +356,7 @@ public sealed class BookingsControllerTests
         var controller = CreateController(dbContext);
 
         var result = await controller.Cancel(
-            booking.BookingId,
+            booking.Reference,
             CancellationToken.None);
 
         var conflict = Assert.IsType<ObjectResult>(result.Result);
@@ -416,7 +375,9 @@ public sealed class BookingsControllerTests
         await using var dbContext = await CreateMigratedContextAsync(connection);
         var controller = CreateController(dbContext);
 
-        var result = await controller.Cancel(999, CancellationToken.None);
+        var result = await controller.Cancel(
+            "APT-2BCDEFGH",
+            CancellationToken.None);
 
         var notFound = Assert.IsType<ObjectResult>(result.Result);
         Assert.Equal(StatusCodes.Status404NotFound, notFound.StatusCode);
@@ -425,16 +386,17 @@ public sealed class BookingsControllerTests
     }
 
     [Theory]
-    [InlineData(0)]
-    [InlineData(-1)]
-    public async Task Cancel_InvalidBookingId_ReturnsBadRequest(int bookingId)
+    [InlineData("")]
+    [InlineData("12")]
+    public async Task Cancel_InvalidReference_ReturnsBadRequest(
+        string bookingReference)
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
         await using var dbContext = await CreateMigratedContextAsync(connection);
         var controller = CreateController(dbContext);
 
         var result = await controller.Cancel(
-            bookingId,
+            bookingReference,
             CancellationToken.None);
 
         var badRequest = Assert.IsType<ObjectResult>(result.Result);
@@ -447,7 +409,10 @@ public sealed class BookingsControllerTests
         AppointmentDbContext dbContext)
     {
         return new BookingsController(
-            new BookingService(dbContext, new FixedTimeProvider(UtcNow)));
+            new BookingService(
+                dbContext,
+                new BookingReferenceGenerator(),
+                new FixedTimeProvider(UtcNow)));
     }
 
     private static async Task<AppointmentSlot> CreateSlotAsync(

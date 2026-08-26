@@ -29,7 +29,7 @@ export interface UnavailablePeriod {
 }
 
 export interface StaffBooking {
-  bookingId: number
+  bookingReference: string
   status: 'Active' | 'Cancelled'
   bookedAtUtc: string
   cancelledAtUtc: string | null
@@ -38,7 +38,6 @@ export interface StaffBooking {
   endsAtUtc: string
   clinicianId: number
   clinicianName: string
-  patientReference: string
   patientDisplayName: string
 }
 

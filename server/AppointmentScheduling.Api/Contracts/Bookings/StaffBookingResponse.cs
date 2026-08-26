@@ -1,7 +1,7 @@
 namespace AppointmentScheduling.Api.Contracts.Bookings;
 
 public sealed record StaffBookingResponse(
-    int BookingId,
+    string BookingReference,
     string Status,
     DateTime BookedAtUtc,
     DateTime? CancelledAtUtc,
@@ -10,5 +10,4 @@ public sealed record StaffBookingResponse(
     DateTime EndsAtUtc,
     int ClinicianId,
     string ClinicianName,
-    string PatientReference,
     string PatientDisplayName);

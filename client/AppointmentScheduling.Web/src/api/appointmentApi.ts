@@ -13,9 +13,8 @@ export interface AvailableAppointmentSlot {
 }
 
 export interface Booking {
-  bookingId: number
+  bookingReference: string
   appointmentSlotId: number
-  patientReference: string
   patientDisplayName: string
   status: 'Active' | 'Cancelled'
   bookedAtUtc: string
@@ -26,7 +25,6 @@ export interface Booking {
 
 export interface CreateBookingRequest {
   appointmentSlotId: number
-  patientReference: string
   patientDisplayName: string
 }
 
@@ -41,12 +39,17 @@ export function createBooking(input: CreateBookingRequest): Promise<Booking> {
   })
 }
 
-export function getBooking(bookingId: number): Promise<Booking> {
-  return request<Booking>(`/api/bookings/${bookingId}`)
+export function getBooking(bookingReference: string): Promise<Booking> {
+  return request<Booking>(
+    `/api/bookings/${encodeURIComponent(bookingReference)}`,
+  )
 }
 
-export function cancelBooking(bookingId: number): Promise<Booking> {
-  return request<Booking>(`/api/bookings/${bookingId}/cancel`, {
-    method: 'POST',
-  })
+export function cancelBooking(bookingReference: string): Promise<Booking> {
+  return request<Booking>(
+    `/api/bookings/${encodeURIComponent(bookingReference)}/cancel`,
+    {
+      method: 'POST',
+    },
+  )
 }

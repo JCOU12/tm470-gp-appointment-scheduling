@@ -17,22 +17,22 @@ public sealed class BookingsController : ControllerBase
         _bookingService = bookingService;
     }
 
-    [HttpGet("{bookingId:int}")]
+    [HttpGet("{bookingReference}")]
     [EndpointName("GetBooking")]
     [EndpointSummary("Get a booking")]
     [EndpointDescription(
-        "Returns an active or cancelled booking using its numeric booking reference.")]
+        "Returns an active or cancelled booking using its public booking reference.")]
     [ProducesResponseType<BookingResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<BookingResponse>> GetById(
-        int bookingId,
+    public async Task<ActionResult<BookingResponse>> GetByReference(
+        string bookingReference,
         CancellationToken cancellationToken)
     {
         try
         {
-            var booking = await _bookingService.GetByIdAsync(
-                bookingId,
+            var booking = await _bookingService.GetByReferenceAsync(
+                bookingReference,
                 cancellationToken);
 
             return Ok(ToResponse(booking));
@@ -53,7 +53,7 @@ public sealed class BookingsController : ControllerBase
         }
     }
 
-    [HttpPost("{bookingId:int}/cancel")]
+    [HttpPost("{bookingReference}/cancel")]
     [EndpointName("CancelBooking")]
     [EndpointSummary("Cancel a booking")]
     [EndpointDescription(
@@ -63,13 +63,13 @@ public sealed class BookingsController : ControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<BookingResponse>> Cancel(
-        int bookingId,
+        string bookingReference,
         CancellationToken cancellationToken)
     {
         try
         {
             var booking = await _bookingService.CancelAsync(
-                bookingId,
+                bookingReference,
                 cancellationToken);
 
             return Ok(ToResponse(booking));
@@ -116,7 +116,6 @@ public sealed class BookingsController : ControllerBase
         {
             booking = await _bookingService.CreateAsync(
                 request.AppointmentSlotId,
-                request.PatientReference,
                 request.PatientDisplayName,
                 cancellationToken);
         }
@@ -144,15 +143,14 @@ public sealed class BookingsController : ControllerBase
 
         var response = ToResponse(booking);
 
-        return Created($"/api/bookings/{booking.BookingId}", response);
+        return Created($"/api/bookings/{booking.Reference}", response);
     }
 
     private static BookingResponse ToResponse(Booking booking)
     {
         return new BookingResponse(
-            booking.BookingId,
+            booking.Reference,
             booking.AppointmentSlotId,
-            booking.Patient.Reference,
             booking.Patient.DisplayName,
             booking.Status.ToString(),
             booking.BookedAtUtc,

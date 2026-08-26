@@ -166,21 +166,18 @@ public class AppointmentDbContext : DbContext
         {
             entity.HasKey(patient => patient.PatientId);
 
-            entity.Property(patient => patient.Reference)
-                .IsRequired()
-                .HasMaxLength(50);
-
             entity.Property(patient => patient.DisplayName)
                 .IsRequired()
                 .HasMaxLength(100);
-
-            entity.HasIndex(patient => patient.Reference)
-                .IsUnique();
         });
 
         modelBuilder.Entity<Booking>(entity =>
         {
             entity.HasKey(booking => booking.BookingId);
+
+            entity.Property(booking => booking.Reference)
+                .IsRequired()
+                .HasMaxLength(12);
 
             entity.Property(booking => booking.Status)
                 .HasConversion<string>()
@@ -205,6 +202,9 @@ public class AppointmentDbContext : DbContext
                 .HasFilter("\"Status\" = 'Active'");
 
             entity.HasIndex(booking => booking.PatientId);
+
+            entity.HasIndex(booking => booking.Reference)
+                .IsUnique();
 
             entity.ToTable(table =>
             {

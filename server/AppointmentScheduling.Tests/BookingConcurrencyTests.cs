@@ -35,11 +35,11 @@ public sealed class BookingConcurrencyTests
 
             var firstRequest = SubmitAfterStartAsync(
                 firstController,
-                new CreateBookingRequest(slotId, "PAT-001", "Alex"),
+                new CreateBookingRequest(slotId, "Alex"),
                 startGate.Task);
             var secondRequest = SubmitAfterStartAsync(
                 secondController,
-                new CreateBookingRequest(slotId, "PAT-002", "Sam"),
+                new CreateBookingRequest(slotId, "Sam"),
                 startGate.Task);
 
             startGate.SetResult();
@@ -79,7 +79,10 @@ public sealed class BookingConcurrencyTests
         AppointmentDbContext dbContext)
     {
         return new BookingsController(
-            new BookingService(dbContext, new FixedTimeProvider(UtcNow)));
+            new BookingService(
+                dbContext,
+                new BookingReferenceGenerator(),
+                new FixedTimeProvider(UtcNow)));
     }
 
     private static async Task<ActionResult<BookingResponse>> SubmitAfterStartAsync(

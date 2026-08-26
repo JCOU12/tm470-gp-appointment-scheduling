@@ -7,32 +7,36 @@ namespace AppointmentScheduling.Api.Services;
 
 public sealed class BookingService
 {
-    private const int MaximumPatientReferenceLength = 50;
     private const int MaximumPatientDisplayNameLength = 100;
+    private const int MaximumReferenceGenerationAttempts = 5;
 
     private readonly AppointmentDbContext _dbContext;
+    private readonly BookingReferenceGenerator _bookingReferenceGenerator;
     private readonly TimeProvider _timeProvider;
 
     public BookingService(
         AppointmentDbContext dbContext,
+        BookingReferenceGenerator bookingReferenceGenerator,
         TimeProvider timeProvider)
     {
         _dbContext = dbContext;
+        _bookingReferenceGenerator = bookingReferenceGenerator;
         _timeProvider = timeProvider;
     }
 
-    public async Task<Booking> GetByIdAsync(
-        int bookingId,
+    public async Task<Booking> GetByReferenceAsync(
+        string bookingReference,
         CancellationToken cancellationToken)
     {
-        ValidateBookingId(bookingId);
+        var normalisedReference = ValidateAndNormaliseBookingReference(
+            bookingReference);
 
         var booking = await _dbContext.Bookings
             .AsNoTracking()
             .Include(item => item.Patient)
             .Include(item => item.AppointmentSlot)
             .SingleOrDefaultAsync(
-                item => item.BookingId == bookingId,
+                item => item.Reference == normalisedReference,
                 cancellationToken);
 
         return booking
@@ -41,16 +45,17 @@ public sealed class BookingService
     }
 
     public async Task<Booking> CancelAsync(
-        int bookingId,
+        string bookingReference,
         CancellationToken cancellationToken)
     {
-        ValidateBookingId(bookingId);
+        var normalisedReference = ValidateAndNormaliseBookingReference(
+            bookingReference);
 
         var booking = await _dbContext.Bookings
             .Include(item => item.Patient)
             .Include(item => item.AppointmentSlot)
             .SingleOrDefaultAsync(
-                item => item.BookingId == bookingId,
+                item => item.Reference == normalisedReference,
                 cancellationToken)
             ?? throw new BookingNotFoundException(
                 "The booking was not found.");
@@ -79,12 +84,9 @@ public sealed class BookingService
 
     public async Task<Booking> CreateAsync(
         int appointmentSlotId,
-        string patientReference,
         string patientDisplayName,
         CancellationToken cancellationToken)
     {
-        var normalisedReference = ValidateAndNormalisePatientReference(
-            patientReference);
         var normalisedDisplayName = ValidateAndNormaliseDisplayName(
             patientDisplayName);
 
@@ -149,18 +151,14 @@ public sealed class BookingService
                 "The appointment slot has already been booked.");
         }
 
-        var patient = await _dbContext.Patients
-            .SingleOrDefaultAsync(
-                item => item.Reference == normalisedReference,
-                cancellationToken)
-            ?? new Patient
-            {
-                Reference = normalisedReference,
-                DisplayName = normalisedDisplayName
-            };
+        var patient = new Patient
+        {
+            DisplayName = normalisedDisplayName
+        };
 
         var booking = new Booking
         {
+            Reference = await GenerateUniqueReferenceAsync(cancellationToken),
             AppointmentSlot = appointmentSlot,
             Patient = patient,
             Status = BookingStatus.Active,
@@ -198,30 +196,43 @@ public sealed class BookingService
                 StringComparison.Ordinal);
     }
 
-    private static void ValidateBookingId(int bookingId)
+    private async Task<string> GenerateUniqueReferenceAsync(
+        CancellationToken cancellationToken)
     {
-        if (bookingId <= 0)
+        for (var attempt = 0; attempt < MaximumReferenceGenerationAttempts; attempt++)
         {
-            throw new BookingValidationException(
-                "BookingId must be greater than zero.");
+            var reference = _bookingReferenceGenerator.Generate();
+            var alreadyExists = await _dbContext.Bookings
+                .AsNoTracking()
+                .AnyAsync(
+                    booking => booking.Reference == reference,
+                    cancellationToken);
+
+            if (!alreadyExists)
+            {
+                return reference;
+            }
         }
+
+        throw new InvalidOperationException(
+            "A unique booking reference could not be generated.");
     }
 
-    private static string ValidateAndNormalisePatientReference(
-        string patientReference)
+    private static string ValidateAndNormaliseBookingReference(
+        string bookingReference)
     {
-        if (string.IsNullOrWhiteSpace(patientReference))
+        if (string.IsNullOrWhiteSpace(bookingReference))
         {
             throw new BookingValidationException(
-                "PatientReference is required.");
+                "BookingReference is required.");
         }
 
-        var normalisedReference = patientReference.Trim().ToUpperInvariant();
+        var normalisedReference = bookingReference.Trim().ToUpperInvariant();
 
-        if (normalisedReference.Length > MaximumPatientReferenceLength)
+        if (!BookingReferenceGenerator.IsValid(normalisedReference))
         {
             throw new BookingValidationException(
-                $"PatientReference must not exceed {MaximumPatientReferenceLength} characters.");
+                $"BookingReference must use the format {BookingReferenceGenerator.Prefix} followed by {BookingReferenceGenerator.RandomCharacterCount} letters or numbers.");
         }
 
         return normalisedReference;

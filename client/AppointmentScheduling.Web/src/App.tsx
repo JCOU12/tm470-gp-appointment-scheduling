@@ -27,7 +27,6 @@ import './App.css'
 
 interface BookingDraft {
   selectedSlot: AvailableAppointmentSlot | null
-  patientReference: string
   patientDisplayName: string
 }
 
@@ -38,7 +37,6 @@ interface RouteState {
 
 const emptyDraft: BookingDraft = {
   selectedSlot: null,
-  patientReference: '',
   patientDisplayName: '',
 }
 
@@ -94,18 +92,14 @@ function BookingSummary({ booking }: { booking: Booking }) {
     <dl className="nhsuk-summary-list booking-details">
       <div className="nhsuk-summary-list__row">
         <dt className="nhsuk-summary-list__key">Booking reference</dt>
-        <dd className="nhsuk-summary-list__value">{booking.bookingId}</dd>
+        <dd className="nhsuk-summary-list__value">
+          {booking.bookingReference}
+        </dd>
       </div>
       <div className="nhsuk-summary-list__row">
         <dt className="nhsuk-summary-list__key">Patient</dt>
         <dd className="nhsuk-summary-list__value">
           {booking.patientDisplayName}
-        </dd>
-      </div>
-      <div className="nhsuk-summary-list__row">
-        <dt className="nhsuk-summary-list__key">Patient reference</dt>
-        <dd className="nhsuk-summary-list__value">
-          {booking.patientReference}
         </dd>
       </div>
       <div className="nhsuk-summary-list__row">
@@ -291,17 +285,13 @@ function PatientDetailsPage({
   function continueToReview(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (
-      draft.patientReference.trim().length === 0 ||
-      draft.patientDisplayName.trim().length === 0
-    ) {
-      setFormError('Enter the patient reference and patient name.')
+    if (draft.patientDisplayName.trim().length === 0) {
+      setFormError('Enter the patient name.')
       return
     }
 
     setDraft((current) => ({
       ...current,
-      patientReference: current.patientReference.trim(),
       patientDisplayName: current.patientDisplayName.trim(),
     }))
     navigate('/appointments/review')
@@ -331,28 +321,6 @@ function PatientDetailsPage({
       </div>
 
       <form className="journey-form" onSubmit={continueToReview} noValidate>
-        <div className="nhsuk-form-group form-group">
-          <label className="nhsuk-label" htmlFor="patient-reference">
-            Patient reference
-          </label>
-          <div className="nhsuk-hint" id="patient-reference-hint">
-            For example, PAT-001
-          </div>
-          <input
-            className="nhsuk-input nhsuk-input--width-20"
-            id="patient-reference"
-            aria-describedby="patient-reference-hint"
-            value={draft.patientReference}
-            onChange={(event) =>
-              setDraft((current) => ({
-                ...current,
-                patientReference: event.target.value,
-              }))
-            }
-            maxLength={50}
-          />
-        </div>
-
         <div className="nhsuk-form-group form-group">
           <label className="nhsuk-label" htmlFor="patient-name">
             Patient name
@@ -388,10 +356,7 @@ function ReviewAppointmentPage({ draft }: { draft: BookingDraft }) {
     return <Navigate replace to="/appointments" />
   }
 
-  if (
-    draft.patientReference.length === 0 ||
-    draft.patientDisplayName.length === 0
-  ) {
+  if (draft.patientDisplayName.length === 0) {
     return <Navigate replace to="/appointments/details" />
   }
 
@@ -406,10 +371,9 @@ function ReviewAppointmentPage({ draft }: { draft: BookingDraft }) {
     try {
       const booking = await createBooking({
         appointmentSlotId: draft.selectedSlot.appointmentSlotId,
-        patientReference: draft.patientReference,
         patientDisplayName: draft.patientDisplayName,
       })
-      navigate(`/appointments/confirmation/${booking.bookingId}`, {
+      navigate(`/appointments/confirmation/${booking.bookingReference}`, {
         replace: true,
         state: { booking } satisfies RouteState,
       })
@@ -462,21 +426,6 @@ function ReviewAppointmentPage({ draft }: { draft: BookingDraft }) {
           </dd>
         </div>
         <div className="nhsuk-summary-list__row">
-          <dt className="nhsuk-summary-list__key">Patient reference</dt>
-          <dd className="nhsuk-summary-list__value">
-            {draft.patientReference}
-          </dd>
-          <dd className="nhsuk-summary-list__actions">
-            <Link to="/appointments/details">
-              Change
-              <span className="nhsuk-u-visually-hidden">
-                {' '}
-                patient reference
-              </span>
-            </Link>
-          </dd>
-        </div>
-        <div className="nhsuk-summary-list__row">
           <dt className="nhsuk-summary-list__key">Patient name</dt>
           <dd className="nhsuk-summary-list__value">
             {draft.patientDisplayName}
@@ -502,36 +451,39 @@ function ReviewAppointmentPage({ draft }: { draft: BookingDraft }) {
 }
 
 function useRouteBooking() {
-  const { bookingId } = useParams()
+  const { bookingReference = '' } = useParams()
   const location = useLocation()
   const routeState = location.state as RouteState | null
-  const parsedBookingId = Number(bookingId)
+  const normalisedBookingReference = bookingReference.trim().toUpperCase()
   const stateBooking = routeState?.booking
   const matchingStateBooking =
-    stateBooking?.bookingId === parsedBookingId ? stateBooking : null
-  const isValidBookingId =
-    Number.isInteger(parsedBookingId) && parsedBookingId > 0
+    stateBooking?.bookingReference === normalisedBookingReference
+      ? stateBooking
+      : null
+  const isValidBookingReference = /^APT-[A-Z0-9]{8}$/.test(
+    normalisedBookingReference,
+  )
   const [bookingResult, setBookingResult] = useState<{
-    bookingId: number
+    bookingReference: string
     booking: Booking
   } | null>(null)
   const [errorResult, setErrorResult] = useState<{
-    bookingId: number
+    bookingReference: string
     message: string
   } | null>(null)
 
   useEffect(() => {
-    if (matchingStateBooking !== null || !isValidBookingId) {
+    if (matchingStateBooking !== null || !isValidBookingReference) {
       return
     }
 
     let isCurrent = true
 
-    getBooking(parsedBookingId)
+    getBooking(normalisedBookingReference)
       .then((storedBooking) => {
         if (isCurrent) {
           setBookingResult({
-            bookingId: parsedBookingId,
+            bookingReference: normalisedBookingReference,
             booking: storedBooking,
           })
         }
@@ -539,7 +491,7 @@ function useRouteBooking() {
       .catch((requestError: unknown) => {
         if (isCurrent) {
           setErrorResult({
-            bookingId: parsedBookingId,
+            bookingReference: normalisedBookingReference,
             message: errorMessage(requestError),
           })
         }
@@ -548,26 +500,32 @@ function useRouteBooking() {
     return () => {
       isCurrent = false
     }
-  }, [isValidBookingId, matchingStateBooking, parsedBookingId])
+  }, [
+    isValidBookingReference,
+    matchingStateBooking,
+    normalisedBookingReference,
+  ])
 
   const loadedBooking =
-    bookingResult?.bookingId === parsedBookingId
+    bookingResult?.bookingReference === normalisedBookingReference
       ? bookingResult.booking
       : null
   const booking = matchingStateBooking ?? loadedBooking
-  const error = !isValidBookingId
-    ? 'Enter a valid booking reference greater than zero.'
-    : errorResult?.bookingId === parsedBookingId
+  const error = !isValidBookingReference
+    ? 'Enter a booking reference in the format APT- followed by 8 letters or numbers.'
+    : errorResult?.bookingReference === normalisedBookingReference
       ? errorResult.message
       : null
-  const isLoading = isValidBookingId && booking === null && error === null
+  const isLoading =
+    isValidBookingReference && booking === null && error === null
 
-  return { booking, error, isLoading, parsedBookingId }
+  return { booking, error, isLoading, normalisedBookingReference }
 }
 
 function BookingConfirmationPage({ resetDraft }: { resetDraft: () => void }) {
   const navigate = useNavigate()
-  const { booking, error, isLoading, parsedBookingId } = useRouteBooking()
+  const { booking, error, isLoading, normalisedBookingReference } =
+    useRouteBooking()
 
   useEffect(() => {
     resetDraft()
@@ -583,7 +541,7 @@ function BookingConfirmationPage({ resetDraft }: { resetDraft: () => void }) {
         message={
           booking === null
             ? null
-            : `Booking ${booking.bookingId} has been confirmed.`
+            : `Booking ${booking.bookingReference} has been confirmed.`
         }
       />
       <ErrorSummary message={error} />
@@ -594,7 +552,7 @@ function BookingConfirmationPage({ resetDraft }: { resetDraft: () => void }) {
           isCancelling={false}
           isConfirmingCancellation={false}
           onStartCancellation={() =>
-            navigate(`/bookings/${parsedBookingId}/cancel`, {
+            navigate(`/bookings/${normalisedBookingReference}/cancel`, {
               state: { booking } satisfies RouteState,
             })
           }
@@ -612,19 +570,21 @@ function BookingConfirmationPage({ resetDraft }: { resetDraft: () => void }) {
 
 function BookingLookupPage() {
   const navigate = useNavigate()
-  const [bookingId, setBookingId] = useState('')
+  const [bookingReference, setBookingReference] = useState('')
   const [validationError, setValidationError] = useState<string | null>(null)
 
   function findBooking(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const parsedBookingId = Number(bookingId)
+    const normalisedReference = bookingReference.trim().toUpperCase()
 
-    if (!Number.isInteger(parsedBookingId) || parsedBookingId <= 0) {
-      setValidationError('Enter a valid booking reference greater than zero.')
+    if (!/^APT-[A-Z0-9]{8}$/.test(normalisedReference)) {
+      setValidationError(
+        'Enter a booking reference in the format APT- followed by 8 letters or numbers.',
+      )
       return
     }
 
-    navigate(`/bookings/${parsedBookingId}`)
+    navigate(`/bookings/${normalisedReference}`)
   }
 
   return (
@@ -647,13 +607,19 @@ function BookingLookupPage() {
           <label className="nhsuk-label" htmlFor="booking-reference">
             Booking reference
           </label>
+          <div className="nhsuk-hint" id="booking-reference-hint">
+            For example, APT-7K4M9Q2R
+          </div>
           <input
             className="nhsuk-input nhsuk-input--width-10"
             id="booking-reference"
-            inputMode="numeric"
-            pattern="[0-9]+"
-            value={bookingId}
-            onChange={(event) => setBookingId(event.target.value)}
+            aria-describedby="booking-reference-hint"
+            autoCapitalize="characters"
+            autoComplete="off"
+            spellCheck={false}
+            maxLength={12}
+            value={bookingReference}
+            onChange={(event) => setBookingReference(event.target.value)}
           />
         </div>
         <button className="nhsuk-button" type="submit">
@@ -666,7 +632,8 @@ function BookingLookupPage() {
 
 function BookingDetailsPage() {
   const navigate = useNavigate()
-  const { booking, error, isLoading, parsedBookingId } = useRouteBooking()
+  const { booking, error, isLoading, normalisedBookingReference } =
+    useRouteBooking()
 
   return (
     <>
@@ -685,7 +652,7 @@ function BookingDetailsPage() {
           isCancelling={false}
           isConfirmingCancellation={false}
           onStartCancellation={() =>
-            navigate(`/bookings/${parsedBookingId}/cancel`, {
+            navigate(`/bookings/${normalisedBookingReference}/cancel`, {
               state: { booking } satisfies RouteState,
             })
           }
@@ -699,7 +666,8 @@ function BookingDetailsPage() {
 
 function CancelBookingPage() {
   const navigate = useNavigate()
-  const { booking, error, isLoading, parsedBookingId } = useRouteBooking()
+  const { booking, error, isLoading, normalisedBookingReference } =
+    useRouteBooking()
   const [actionError, setActionError] = useState<string | null>(null)
   const [isCancelling, setIsCancelling] = useState(false)
 
@@ -712,8 +680,8 @@ function CancelBookingPage() {
     setIsCancelling(true)
 
     try {
-      const cancelledBooking = await cancelBooking(booking.bookingId)
-      navigate(`/bookings/${booking.bookingId}/cancelled`, {
+      const cancelledBooking = await cancelBooking(booking.bookingReference)
+      navigate(`/bookings/${booking.bookingReference}/cancelled`, {
         replace: true,
         state: { booking: cancelledBooking } satisfies RouteState,
       })
@@ -725,7 +693,10 @@ function CancelBookingPage() {
 
   return (
     <>
-      <Link className="nhsuk-back-link" to={`/bookings/${parsedBookingId}`}>
+      <Link
+        className="nhsuk-back-link"
+        to={`/bookings/${normalisedBookingReference}`}
+      >
         Back
       </Link>
       <PageIntroduction
@@ -753,7 +724,7 @@ function CancelBookingPage() {
               </button>
               <Link
                 className="nhsuk-button nhsuk-button--secondary"
-                to={`/bookings/${booking.bookingId}`}
+                to={`/bookings/${booking.bookingReference}`}
                 state={{ booking } satisfies RouteState}
               >
                 Keep booking
@@ -781,7 +752,7 @@ function CancellationConfirmationPage() {
         message={
           booking === null
             ? null
-            : `Booking ${booking.bookingId} has been cancelled.`
+            : `Booking ${booking.bookingReference} has been cancelled.`
         }
       />
       <ErrorSummary message={error} />
@@ -820,17 +791,20 @@ export default function App() {
             element={<ReviewAppointmentPage draft={draft} />}
           />
           <Route
-            path="appointments/confirmation/:bookingId"
+            path="appointments/confirmation/:bookingReference"
             element={<BookingConfirmationPage resetDraft={resetDraft} />}
           />
           <Route path="bookings" element={<BookingLookupPage />} />
-          <Route path="bookings/:bookingId" element={<BookingDetailsPage />} />
           <Route
-            path="bookings/:bookingId/cancel"
+            path="bookings/:bookingReference"
+            element={<BookingDetailsPage />}
+          />
+          <Route
+            path="bookings/:bookingReference/cancel"
             element={<CancelBookingPage />}
           />
           <Route
-            path="bookings/:bookingId/cancelled"
+            path="bookings/:bookingReference/cancelled"
             element={<CancellationConfirmationPage />}
           />
           <Route path="*" element={<Navigate replace to="/" />} />

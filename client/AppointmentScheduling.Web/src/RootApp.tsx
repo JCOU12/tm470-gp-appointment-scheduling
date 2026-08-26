@@ -1,8 +1,12 @@
 import App from './App'
 import StaffApp from './StaffApp'
+import { Route, Routes } from 'react-router'
 
 export default function RootApp() {
-  const currentPath = window.location.pathname.replace(/\/+$/, '')
-
-  return currentPath === '/staff' ? <StaffApp /> : <App />
+  return (
+    <Routes>
+      <Route path="/staff" element={<StaffApp />} />
+      <Route path="*" element={<App />} />
+    </Routes>
+  )
 }

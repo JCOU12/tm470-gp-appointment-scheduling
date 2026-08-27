@@ -30,7 +30,7 @@ export function BookingPanel({
           <div>
             <span className="nhsuk-caption-m">Booking reference</span>
             <h2 className="nhsuk-card__heading" id="booking-heading">
-              Booking {booking.bookingId}
+              {booking.bookingReference}
             </h2>
           </div>
           <span
@@ -47,12 +47,6 @@ export function BookingPanel({
             <dt className="nhsuk-summary-list__key">Patient</dt>
             <dd className="nhsuk-summary-list__value">
               {booking.patientDisplayName}
-            </dd>
-          </div>
-          <div className="nhsuk-summary-list__row">
-            <dt className="nhsuk-summary-list__key">Patient reference</dt>
-            <dd className="nhsuk-summary-list__value">
-              {booking.patientReference}
             </dd>
           </div>
           <div className="nhsuk-summary-list__row">

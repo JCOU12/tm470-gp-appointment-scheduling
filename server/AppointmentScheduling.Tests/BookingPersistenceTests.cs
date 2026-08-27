@@ -13,11 +13,12 @@ public sealed class BookingPersistenceTests
         await using var connection = new SqliteConnection("Data Source=:memory:");
         await using var dbContext = await CreateMigratedContextAsync(connection);
         var slot = await CreateSlotAsync(dbContext);
-        var patient = CreatePatient("PAT-001", "Alex Morgan");
+        var patient = CreatePatient("Alex Morgan");
         var bookedAtUtc = UtcDateTime(9, 1);
         dbContext.Bookings.Add(
             new Booking
             {
+                Reference = "APT-2BCDEFGH",
                 AppointmentSlotId = slot.AppointmentSlotId,
                 Patient = patient,
                 BookedAtUtc = bookedAtUtc
@@ -36,11 +37,84 @@ public sealed class BookingPersistenceTests
         Assert.Equal(bookedAtUtc, booking.BookedAtUtc);
         Assert.Null(booking.CancelledAtUtc);
         Assert.Equal(slot.AppointmentSlotId, booking.AppointmentSlotId);
-        Assert.Equal("PAT-001", booking.Patient.Reference);
+        Assert.Equal("APT-2BCDEFGH", booking.Reference);
+        Assert.Equal("Alex Morgan", booking.Patient.DisplayName);
 
         await using var command = connection.CreateCommand();
         command.CommandText = "SELECT Status FROM Bookings";
         Assert.Equal("Active", await command.ExecuteScalarAsync());
+    }
+
+    [Fact]
+    public async Task Migration_UpgradesExistingBookingsWithPublicReferences()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+
+        var options = new DbContextOptionsBuilder<AppointmentDbContext>()
+            .UseSqlite(connection)
+            .Options;
+        await using var dbContext = new AppointmentDbContext(options);
+        await dbContext.Database.MigrateAsync(
+            "20260814215652_AddUnavailablePeriods");
+
+        await using (var seedCommand = connection.CreateCommand())
+        {
+            seedCommand.CommandText =
+                "INSERT INTO Patients (Reference, DisplayName) "
+                + "VALUES ('PAT-001', 'Alex Morgan'); "
+                + "INSERT INTO AvailabilitySessions "
+                + "(ClinicianId, StartsAtUtc, EndsAtUtc, SlotDurationMinutes) "
+                + "VALUES (1, '2026-08-27 09:00:00', "
+                + "'2026-08-27 10:00:00', 10); "
+                + "INSERT INTO AppointmentSlots "
+                + "(AvailabilitySessionId, StartsAtUtc, EndsAtUtc) "
+                + "VALUES (1, '2026-08-27 09:10:00', "
+                + "'2026-08-27 09:20:00'); "
+                + "INSERT INTO Bookings "
+                + "(AppointmentSlotId, PatientId, Status, BookedAtUtc) "
+                + "VALUES (1, 1, 'Active', '2026-08-26 09:00:00');";
+            await seedCommand.ExecuteNonQueryAsync();
+        }
+
+        await dbContext.Database.MigrateAsync();
+        dbContext.ChangeTracker.Clear();
+
+        var booking = await dbContext.Bookings
+            .AsNoTracking()
+            .Include(item => item.Patient)
+            .SingleAsync();
+        Assert.Matches("^APT-[A-Z0-9]{8}$", booking.Reference);
+        Assert.Equal("Alex Morgan", booking.Patient.DisplayName);
+
+        await using var schemaCommand = connection.CreateCommand();
+        schemaCommand.CommandText =
+            "SELECT COUNT(*) FROM pragma_table_info('Patients') "
+            + "WHERE name = 'Reference'";
+        Assert.Equal(0L, await schemaCommand.ExecuteScalarAsync());
+    }
+
+    [Fact]
+    public async Task DuplicateBookingReference_IsRejectedByDatabase()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await using var dbContext = await CreateMigratedContextAsync(connection);
+        var firstSlot = await CreateSlotAsync(dbContext);
+        var secondSlot = await CreateSlotAsync(dbContext);
+        dbContext.Bookings.Add(
+            CreateBooking(
+                "APT-2BCDEFGH",
+                firstSlot.AppointmentSlotId,
+                CreatePatient("Alex")));
+        await dbContext.SaveChangesAsync();
+        dbContext.Bookings.Add(
+            CreateBooking(
+                "APT-2BCDEFGH",
+                secondSlot.AppointmentSlotId,
+                CreatePatient("Sam")));
+
+        await Assert.ThrowsAsync<DbUpdateException>(
+            () => dbContext.SaveChangesAsync());
     }
 
     [Fact]
@@ -50,10 +124,16 @@ public sealed class BookingPersistenceTests
         await using var dbContext = await CreateMigratedContextAsync(connection);
         var slot = await CreateSlotAsync(dbContext);
         dbContext.Bookings.Add(
-            CreateBooking(slot.AppointmentSlotId, CreatePatient("PAT-001", "Alex")));
+            CreateBooking(
+                "APT-2BCDEFGH",
+                slot.AppointmentSlotId,
+                CreatePatient("Alex")));
         await dbContext.SaveChangesAsync();
         dbContext.Bookings.Add(
-            CreateBooking(slot.AppointmentSlotId, CreatePatient("PAT-002", "Sam")));
+            CreateBooking(
+                "APT-3BCDEFGH",
+                slot.AppointmentSlotId,
+                CreatePatient("Sam")));
 
         await Assert.ThrowsAsync<DbUpdateException>(
             () => dbContext.SaveChangesAsync());
@@ -68,14 +148,18 @@ public sealed class BookingPersistenceTests
         dbContext.Bookings.Add(
             new Booking
             {
+                Reference = "APT-2BCDEFGH",
                 AppointmentSlotId = slot.AppointmentSlotId,
-                Patient = CreatePatient("PAT-001", "Alex"),
+                Patient = CreatePatient("Alex"),
                 Status = BookingStatus.Cancelled,
                 BookedAtUtc = UtcDateTime(9, 1),
                 CancelledAtUtc = UtcDateTime(9, 2)
             });
         dbContext.Bookings.Add(
-            CreateBooking(slot.AppointmentSlotId, CreatePatient("PAT-002", "Sam")));
+            CreateBooking(
+                "APT-3BCDEFGH",
+                slot.AppointmentSlotId,
+                CreatePatient("Sam")));
 
         await dbContext.SaveChangesAsync();
 
@@ -95,8 +179,9 @@ public sealed class BookingPersistenceTests
         dbContext.Bookings.Add(
             new Booking
             {
+                Reference = "APT-2BCDEFGH",
                 AppointmentSlotId = slot.AppointmentSlotId,
-                Patient = CreatePatient("PAT-001", "Alex"),
+                Patient = CreatePatient("Alex"),
                 Status = BookingStatus.Cancelled,
                 BookedAtUtc = UtcDateTime(9, 1)
             });
@@ -105,21 +190,24 @@ public sealed class BookingPersistenceTests
             () => dbContext.SaveChangesAsync());
     }
 
-    private static Booking CreateBooking(int slotId, Patient patient)
+    private static Booking CreateBooking(
+        string reference,
+        int slotId,
+        Patient patient)
     {
         return new Booking
         {
+            Reference = reference,
             AppointmentSlotId = slotId,
             Patient = patient,
             BookedAtUtc = UtcDateTime(9, 1)
         };
     }
 
-    private static Patient CreatePatient(string reference, string displayName)
+    private static Patient CreatePatient(string displayName)
     {
         return new Patient
         {
-            Reference = reference,
             DisplayName = displayName
         };
     }

@@ -1,9 +1,8 @@
 namespace AppointmentScheduling.Api.Contracts.Bookings;
 
 public sealed record BookingResponse(
-    int BookingId,
+    string BookingReference,
     int AppointmentSlotId,
-    string PatientReference,
     string PatientDisplayName,
     string Status,
     DateTime BookedAtUtc,

@@ -16,9 +16,8 @@ const availableSlot: AvailableAppointmentSlot = {
 }
 
 const activeBooking: Booking = {
-  bookingId: 12,
+  bookingReference: 'APT-7K4M9Q2R',
   appointmentSlotId: 42,
-  patientReference: 'PAT-001',
   patientDisplayName: 'Alex Morgan',
   status: 'Active',
   bookedAtUtc: '2026-08-24T08:00:00Z',
@@ -59,10 +58,6 @@ async function reachReviewPage() {
   expect(
     screen.getByRole('heading', { name: /enter patient details/i }),
   ).toBeInTheDocument()
-  await user.type(
-    screen.getByRole('textbox', { name: /^patient reference$/i }),
-    'PAT-001',
-  )
   await user.type(
     screen.getByRole('textbox', { name: /^patient name$/i }),
     'Alex Morgan',
@@ -109,7 +104,7 @@ describe('patient appointment journey', () => {
     renderApp()
     const user = await reachReviewPage()
 
-    expect(screen.getByText('PAT-001')).toBeInTheDocument()
+    expect(screen.getByText('Alex Morgan')).toBeInTheDocument()
     await user.click(
       screen.getByRole('button', { name: /confirm appointment/i }),
     )
@@ -118,7 +113,7 @@ describe('patient appointment journey', () => {
       await screen.findByRole('heading', { name: /appointment confirmed/i }),
     ).toBeInTheDocument()
     expect(
-      screen.getByText('Booking 12 has been confirmed.'),
+      screen.getByText('Booking APT-7K4M9Q2R has been confirmed.'),
     ).toBeInTheDocument()
     expect(screen.getByRole('alert')).toHaveClass(
       'nhsuk-notification-banner--success',
@@ -130,7 +125,6 @@ describe('patient appointment journey', () => {
         method: 'POST',
         body: JSON.stringify({
           appointmentSlotId: 42,
-          patientReference: 'PAT-001',
           patientDisplayName: 'Alex Morgan',
         }),
       }),
@@ -186,7 +180,7 @@ describe('patient appointment journey', () => {
     )
     await user.type(
       screen.getByRole('textbox', { name: /booking reference/i }),
-      '12',
+      'apt-7k4m9q2r',
     )
     await user.click(screen.getByRole('button', { name: /find booking/i }))
     await user.click(
@@ -204,12 +198,12 @@ describe('patient appointment journey', () => {
       await screen.findByRole('heading', { name: /appointment cancelled/i }),
     ).toBeInTheDocument()
     expect(
-      screen.getByText('Booking 12 has been cancelled.'),
+      screen.getByText('Booking APT-7K4M9Q2R has been cancelled.'),
     ).toBeInTheDocument()
     expect(screen.getByText('Cancelled')).toBeInTheDocument()
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
-      '/api/bookings/12/cancel',
+      '/api/bookings/APT-7K4M9Q2R/cancel',
       expect.objectContaining({ method: 'POST' }),
     )
   })
@@ -220,12 +214,12 @@ describe('patient appointment journey', () => {
 
     await user.type(
       screen.getByRole('textbox', { name: /booking reference/i }),
-      '0',
+      '12',
     )
     await user.click(screen.getByRole('button', { name: /find booking/i }))
 
     expect(
-      screen.getByText(/enter a valid booking reference greater than zero/i),
+      screen.getByText(/enter a booking reference in the format APT-/i),
     ).toBeInTheDocument()
     expect(fetchMock).not.toHaveBeenCalled()
   })

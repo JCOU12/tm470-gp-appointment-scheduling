@@ -215,10 +215,10 @@ public sealed class StaffUnavailablePeriodsControllerTests
         dbContext.Bookings.Add(
             new Booking
             {
+                Reference = "APT-2BCDEFGH",
                 AppointmentSlot = slot,
                 Patient = new Patient
                 {
-                    Reference = "PAT-001",
                     DisplayName = "Alex Morgan"
                 },
                 Status = status,

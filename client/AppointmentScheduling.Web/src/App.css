@@ -17,7 +17,8 @@
   margin-bottom: 1.5rem;
 }
 
-.patient-journey {
+.patient-journey,
+.staff-journey {
   max-width: 58rem;
 }
 
@@ -58,7 +59,6 @@
   gap: 1rem;
 }
 
-.section-introduction,
 .empty-message,
 .loading-message {
   max-width: 46rem;
@@ -237,17 +237,6 @@
   margin-bottom: 0;
 }
 
-.staff-workflow-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1.5rem;
-}
-
-.staff-form-panel {
-  margin-top: 0;
-  min-width: 0;
-}
-
 .staff-bookings-panel {
   margin-top: 1.5rem;
 }
@@ -312,7 +301,6 @@
 }
 
 @media (max-width: 58rem) {
-  .staff-workflow-grid,
   .booking-filters {
     grid-template-columns: 1fr;
   }

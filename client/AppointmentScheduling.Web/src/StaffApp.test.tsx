@@ -1,6 +1,7 @@
 import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { MemoryRouter, Route, Routes } from 'react-router'
 import StaffApp from './StaffApp'
 import type {
   AvailabilitySession,
@@ -39,10 +40,14 @@ function jsonResponse(body: unknown, status = 200): Response {
   })
 }
 
-function arrangeInitialLoad(bookings: StaffBooking[] = [activeBooking]) {
-  fetchMock
-    .mockResolvedValueOnce(jsonResponse(clinicians))
-    .mockResolvedValueOnce(jsonResponse(bookings))
+function renderStaff(path = '/staff') {
+  return render(
+    <MemoryRouter initialEntries={[path]}>
+      <Routes>
+        <Route path="/staff/*" element={<StaffApp />} />
+      </Routes>
+    </MemoryRouter>,
+  )
 }
 
 describe('staff appointment workflow', () => {
@@ -56,23 +61,28 @@ describe('staff appointment workflow', () => {
     vi.unstubAllGlobals()
   })
 
-  it('loads clinicians and displays staff bookings', async () => {
-    arrangeInitialLoad()
-
-    render(<StaffApp />)
+  it('starts with separate staff scheduling tasks', () => {
+    renderStaff()
 
     expect(
       screen.getByRole('heading', { name: /manage appointment scheduling/i }),
     ).toBeInTheDocument()
-    expect(await screen.findByText('Alex Morgan')).toBeInTheDocument()
-    expect(screen.getByText('APT-7K4M9Q2R')).toBeInTheDocument()
-    expect(screen.getByText('1 booking found')).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: /create availability/i }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: /add unavailable time/i }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: /review bookings/i }),
+    ).toBeInTheDocument()
     expect(
       screen.getByRole('link', { name: /staff scheduling/i }),
     ).toHaveAttribute('aria-current', 'page')
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 
-  it('creates an availability session and reports generated slots', async () => {
+  it('creates availability and shows a dedicated confirmation page', async () => {
     const createdSession: AvailabilitySession = {
       availabilitySessionId: 7,
       clinicianId: 1,
@@ -92,16 +102,20 @@ describe('staff appointment workflow', () => {
         },
       ],
     }
-    arrangeInitialLoad([])
-    fetchMock.mockResolvedValueOnce(jsonResponse(createdSession, 201))
-    render(<StaffApp />)
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(clinicians))
+      .mockResolvedValueOnce(jsonResponse(createdSession, 201))
+    renderStaff()
     const user = userEvent.setup()
-    await screen.findByText('0 bookings found')
 
-    await user.selectOptions(
-      screen.getByLabelText('Clinician', { selector: '#session-clinician' }),
-      '1',
+    await user.click(
+      screen.getByRole('link', { name: /create availability/i }),
     )
+    expect(screen.getByRole('main')).toHaveFocus()
+    await screen.findByRole('heading', {
+      name: /create an availability session/i,
+    })
+    await user.selectOptions(screen.getByLabelText('Clinician'), '1')
     await user.type(
       screen.getByLabelText('Clinician available from'),
       '2026-08-20T09:00',
@@ -110,23 +124,31 @@ describe('staff appointment workflow', () => {
       screen.getByLabelText('Clinician available until'),
       '2026-08-20T10:00',
     )
-    await user.clear(screen.getByLabelText('Length of each appointment in minutes'))
+    await user.clear(
+      screen.getByLabelText('Length of each appointment in minutes'),
+    )
     await user.type(
       screen.getByLabelText('Length of each appointment in minutes'),
       '30',
     )
     expect(
-      screen.getByText('This will create 2 appointments between 09:00 and 10:00.'),
+      screen.getByText(
+        'This will create 2 appointments between 09:00 and 10:00.',
+      ),
     ).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: /create session/i }))
 
     expect(
-      await screen.findByText(
-        'Availability session created with 2 appointment slots.',
-      ),
+      await screen.findByRole('heading', {
+        name: /availability session created/i,
+      }),
     ).toBeInTheDocument()
+    expect(
+      screen.getByText('The availability session has been created.'),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Dr Maya Patel')).toBeInTheDocument()
     expect(fetchMock).toHaveBeenNthCalledWith(
-      3,
+      2,
       '/api/staff/sessions',
       expect.objectContaining({
         method: 'POST',
@@ -140,48 +162,52 @@ describe('staff appointment workflow', () => {
     )
   })
 
-  it('adds a clinician unavailable period', async () => {
+  it('adds unavailable time and shows a dedicated confirmation page', async () => {
     const createdPeriod: UnavailablePeriod = {
       unavailablePeriodId: 4,
       clinicianId: 1,
       startsAtUtc: '2026-08-20T11:00:00Z',
       endsAtUtc: '2026-08-20T12:00:00Z',
     }
-    arrangeInitialLoad([])
-    fetchMock.mockResolvedValueOnce(jsonResponse(createdPeriod, 201))
-    render(<StaffApp />)
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(clinicians))
+      .mockResolvedValueOnce(jsonResponse(createdPeriod, 201))
+    renderStaff('/staff/unavailable-periods/new')
     const user = userEvent.setup()
-    await screen.findByText('0 bookings found')
+    await screen.findByRole('heading', { name: /add unavailable time/i })
 
-    await user.selectOptions(
-      screen.getByLabelText('Clinician', { selector: '#period-clinician' }),
-      '1',
-    )
+    await user.selectOptions(screen.getByLabelText('Clinician'), '1')
     await user.type(screen.getByLabelText('Unavailable from'), '2026-08-20T12:00')
     await user.type(screen.getByLabelText('Unavailable until'), '2026-08-20T13:00')
     await user.click(
-      screen.getByRole('button', { name: /add unavailable period/i }),
+      screen.getByRole('button', { name: /add unavailable time/i }),
     )
 
     expect(
-      await screen.findByText('The clinician unavailable period has been added.'),
+      await screen.findByRole('heading', { name: /unavailable time added/i }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText("The clinician's unavailable time has been added."),
     ).toBeInTheDocument()
     expect(fetchMock).toHaveBeenNthCalledWith(
-      3,
+      2,
       '/api/staff/unavailable-periods',
       expect.objectContaining({ method: 'POST' }),
     )
   })
 
-  it('applies and clears booking filters', async () => {
-    arrangeInitialLoad()
+  it('loads, filters and clears bookings on the booking route', async () => {
     fetchMock
+      .mockResolvedValueOnce(jsonResponse(clinicians))
+      .mockResolvedValueOnce(jsonResponse([activeBooking]))
       .mockResolvedValueOnce(jsonResponse([]))
       .mockResolvedValueOnce(jsonResponse([activeBooking]))
-    render(<StaffApp />)
+    renderStaff('/staff/bookings')
     const user = userEvent.setup()
     await screen.findByText('1 booking found')
 
+    expect(screen.getByText('Alex Morgan')).toBeInTheDocument()
+    expect(screen.getByText('APT-7K4M9Q2R')).toBeInTheDocument()
     const filters = screen.getByRole('button', { name: /apply filters/i })
       .closest('form')
     expect(filters).not.toBeNull()
@@ -216,21 +242,21 @@ describe('staff appointment workflow', () => {
   })
 
   it('shows scheduling conflicts returned by the API', async () => {
-    arrangeInitialLoad([])
-    fetchMock.mockResolvedValueOnce(
-      jsonResponse(
-        { detail: 'The availability session overlaps an existing session.' },
-        409,
-      ),
-    )
-    render(<StaffApp />)
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(clinicians))
+      .mockResolvedValueOnce(
+        jsonResponse(
+          { detail: 'The availability session overlaps an existing session.' },
+          409,
+        ),
+      )
+    renderStaff('/staff/availability/new')
     const user = userEvent.setup()
-    await screen.findByText('0 bookings found')
+    await screen.findByRole('heading', {
+      name: /create an availability session/i,
+    })
 
-    await user.selectOptions(
-      screen.getByLabelText('Clinician', { selector: '#session-clinician' }),
-      '1',
-    )
+    await user.selectOptions(screen.getByLabelText('Clinician'), '1')
     await user.type(
       screen.getByLabelText('Clinician available from'),
       '2026-08-20T09:00',
@@ -246,5 +272,73 @@ describe('staff appointment workflow', () => {
         'The availability session overlaps an existing session.',
       ),
     ).toBeInTheDocument()
+  })
+
+  it('validates the availability time range before sending it', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(clinicians))
+    renderStaff('/staff/availability/new')
+    const user = userEvent.setup()
+    await screen.findByRole('heading', {
+      name: /create an availability session/i,
+    })
+
+    await user.selectOptions(screen.getByLabelText('Clinician'), '1')
+    await user.type(
+      screen.getByLabelText('Clinician available from'),
+      '2026-08-20T10:00',
+    )
+    await user.type(
+      screen.getByLabelText('Clinician available until'),
+      '2026-08-20T09:00',
+    )
+    await user.click(screen.getByRole('button', { name: /create session/i }))
+
+    expect(
+      screen.getByText('The session end must be later than its start.'),
+    ).toBeInTheDocument()
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('shows a summary when required availability details are missing', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(clinicians))
+    renderStaff('/staff/availability/new')
+    const user = userEvent.setup()
+    await screen.findByRole('heading', {
+      name: /create an availability session/i,
+    })
+
+    await user.click(screen.getByRole('button', { name: /create session/i }))
+
+    expect(
+      screen.getByText(
+        'Select a clinician and enter the availability times and appointment length.',
+      ),
+    ).toBeInTheDocument()
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('returns direct confirmation visits to the relevant form', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(clinicians))
+    renderStaff('/staff/availability/confirmation')
+
+    expect(
+      await screen.findByRole('heading', {
+        name: /create an availability session/i,
+      }),
+    ).toBeInTheDocument()
+  })
+
+  it('shows an error when clinician information cannot be loaded', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({ detail: 'Clinicians are temporarily unavailable.' }, 503),
+    )
+    renderStaff('/staff/unavailable-periods/new')
+
+    expect(
+      await screen.findByText('Clinicians are temporarily unavailable.'),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /add unavailable time/i }),
+    ).not.toBeInTheDocument()
   })
 })

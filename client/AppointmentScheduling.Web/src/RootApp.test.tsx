@@ -5,13 +5,6 @@ import RootApp from './RootApp'
 
 const fetchMock = vi.fn<typeof fetch>()
 
-function jsonResponse(body: unknown): Response {
-  return new Response(JSON.stringify(body), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
-  })
-}
-
 describe('application routes', () => {
   afterEach(() => {
     cleanup()
@@ -39,9 +32,6 @@ describe('application routes', () => {
 
   it('shows the staff workflow at the staff path', async () => {
     fetchMock.mockReset()
-    fetchMock
-      .mockResolvedValueOnce(jsonResponse([]))
-      .mockResolvedValueOnce(jsonResponse([]))
     vi.stubGlobal('fetch', fetchMock)
     render(
       <MemoryRouter initialEntries={['/staff']}>
@@ -55,5 +45,6 @@ describe('application routes', () => {
       }),
     ).toBeInTheDocument()
     expect(screen.getByRole('main')).toHaveClass('nhsuk-main-wrapper')
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 })

@@ -5,7 +5,7 @@ import { Route, Routes } from 'react-router'
 export default function RootApp() {
   return (
     <Routes>
-      <Route path="/staff" element={<StaffApp />} />
+      <Route path="/staff/*" element={<StaffApp />} />
       <Route path="*" element={<App />} />
     </Routes>
   )

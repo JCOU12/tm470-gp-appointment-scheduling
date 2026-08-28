@@ -5,10 +5,11 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/api': 'http://localhost:5260',
+      '/api': process.env.VITE_API_PROXY_TARGET ?? 'http://localhost:5260',
     },
   },
   test: {
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
     coverage: {

@@ -93,11 +93,12 @@ This removes the existing data, recreates the database from the migrations and r
 
 Pull requests and changes to `main` must pass the GitHub Actions CI workflow. It verifies locked dependency restoration, formatting and built-in .NET analyser rules, a warning-free Release build, all automated tests, and at least 80% application line coverage.
 
-The frontend CI job installs locked npm dependencies, audits production dependencies, runs ESLint, creates a production build and requires at least 80% statement, branch, function and line coverage.
+The frontend CI job installs locked npm dependencies, audits production dependencies, runs ESLint, creates a production build and requires at least 80% statement, branch, function and line coverage. After the backend and frontend quality jobs pass, Playwright runs the principal patient and staff journeys in Chromium against the real API and a disposable SQLite database.
 
 Run the equivalent checks locally with:
 
 ```powershell
+dotnet tool restore
 dotnet restore AppointmentScheduling.sln --locked-mode
 dotnet format AppointmentScheduling.sln --verify-no-changes --no-restore --severity warn --exclude server/AppointmentScheduling.Api/Data/Migrations
 dotnet build AppointmentScheduling.sln --configuration Release --no-restore --warnaserror
@@ -105,12 +106,34 @@ dotnet test AppointmentScheduling.sln --configuration Release --no-build --setti
 powershell -NoProfile -ExecutionPolicy Bypass -File ./eng/Assert-CodeCoverage.ps1 -CoverageDirectory artefacts/test-results -MinimumLineCoverage 80
 ```
 
-Run the frontend checks from `client/AppointmentScheduling.Web` with:
+From the repository root, change into the directory that contains the frontend `package.json`, then run the frontend checks:
 
 ```powershell
+cd client/AppointmentScheduling.Web
 npm ci
 npm audit --audit-level=high
 npm run lint
 npm run build
 npm run test:coverage
 ```
+
+The preceding `dotnet tool restore` command installs the repository's pinned EF Core command-line tool, which Playwright uses to prepare its database. Run the end-to-end tests from `client/AppointmentScheduling.Web` in the normal headless mode with:
+
+```powershell
+npx playwright install chromium
+npm run test:e2e
+```
+
+To watch the tests run in a visible browser, use headed mode:
+
+```powershell
+npm run test:e2e:headed
+```
+
+For Playwright's interactive test runner, use UI mode:
+
+```powershell
+npm run test:e2e:ui
+```
+
+The end-to-end configuration starts the API and client on dedicated test ports, uses a separate `E2E` .NET build configuration and resets only `appointment-scheduling-e2e.db`. It therefore does not interfere with a development server or change the normal development database. The suite uses page objects and custom Playwright fixtures to keep user-facing locators and reusable page actions separate from the journey assertions.

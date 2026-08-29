@@ -1,4 +1,5 @@
 import { test as base } from '@playwright/test'
+import AxeBuilder from '@axe-core/playwright'
 import { SchedulingApi } from './api/SchedulingApi'
 import { AvailabilityPage } from './pages/AvailabilityPage'
 import { BookingManagementPage } from './pages/BookingManagementPage'
@@ -11,6 +12,7 @@ interface AppointmentPages {
   availabilityPage: AvailabilityPage
   bookingManagementPage: BookingManagementPage
   concurrentPatients: [PatientBookingPage, PatientBookingPage]
+  makeAxeBuilder: () => AxeBuilder
   patientBookingPage: PatientBookingPage
   schedulingApi: SchedulingApi
   staffBookingsPage: StaffBookingsPage
@@ -49,6 +51,17 @@ export const test = base.extend<AppointmentPages>({
     } finally {
       await Promise.all([firstContext.close(), secondContext.close()])
     }
+  },
+  makeAxeBuilder: async ({ page }, provide) => {
+    await provide(() =>
+      new AxeBuilder({ page }).withTags([
+        'wcag2a',
+        'wcag2aa',
+        'wcag21a',
+        'wcag21aa',
+        'wcag22aa',
+      ]),
+    )
   },
   patientBookingPage: async ({ page }, provide) => {
     await provide(new PatientBookingPage(page))

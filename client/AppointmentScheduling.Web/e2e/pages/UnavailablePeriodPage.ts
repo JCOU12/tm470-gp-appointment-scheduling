@@ -9,12 +9,16 @@ interface UnavailablePeriodDetails {
 
 export class UnavailablePeriodPage {
   readonly confirmationHeading: Locator
+  readonly heading: Locator
   readonly page: Page
 
   constructor(page: Page) {
     this.page = page
     this.confirmationHeading = page.getByRole('heading', {
       name: 'Unavailable time added',
+    })
+    this.heading = page.getByRole('heading', {
+      name: 'Add unavailable time',
     })
   }
 

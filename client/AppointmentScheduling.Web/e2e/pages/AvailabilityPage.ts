@@ -11,6 +11,7 @@ interface AvailabilityDetails {
 export class AvailabilityPage {
   readonly appointmentCountSummary: Locator
   readonly confirmationHeading: Locator
+  readonly heading: Locator
   readonly page: Page
 
   constructor(page: Page) {
@@ -20,6 +21,9 @@ export class AvailabilityPage {
     )
     this.confirmationHeading = page.getByRole('heading', {
       name: 'Availability session created',
+    })
+    this.heading = page.getByRole('heading', {
+      name: 'Create an availability session',
     })
   }
 

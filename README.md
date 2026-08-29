@@ -136,4 +136,11 @@ For Playwright's interactive test runner, use UI mode:
 npm run test:e2e:ui
 ```
 
-The end-to-end configuration starts the API and client on dedicated test ports, uses a separate `E2E` .NET build configuration and resets only `appointment-scheduling-e2e.db`. It therefore does not interfere with a development server or change the normal development database. The suite uses page objects and custom Playwright fixtures to keep user-facing locators and reusable page actions separate from the journey assertions.
+Run the keyboard journey and automated WCAG A and AA checks independently
+with:
+
+```powershell
+npm run test:e2e:accessibility
+```
+
+The end-to-end configuration starts the API and client on dedicated test ports, uses a separate `E2E` .NET build configuration and resets only `appointment-scheduling-e2e.db`. It therefore does not interfere with a development server or change the normal development database. The suite uses page objects and custom Playwright fixtures to keep user-facing locators and reusable page actions separate from the journey assertions. Axe checks identify automatically detectable issues, while the keyboard journey verifies that a patient can complete the principal booking and cancellation flow without a pointing device. These checks complement rather than replace manual accessibility and inclusive usability testing.

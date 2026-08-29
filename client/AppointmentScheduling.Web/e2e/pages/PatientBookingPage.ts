@@ -2,14 +2,22 @@ import type { Locator, Page } from '@playwright/test'
 
 export class PatientBookingPage {
   readonly confirmationAlert: Locator
+  readonly confirmationHeading: Locator
   readonly page: Page
   readonly reviewHeading: Locator
+  readonly selectionHeading: Locator
 
   constructor(page: Page) {
     this.page = page
     this.confirmationAlert = page.getByRole('alert')
+    this.confirmationHeading = page.getByRole('heading', {
+      name: 'Appointment confirmed',
+    })
     this.reviewHeading = page.getByRole('heading', {
       name: 'Check your appointment details',
+    })
+    this.selectionHeading = page.getByRole('heading', {
+      name: 'Choose an appointment',
     })
   }
 
@@ -39,6 +47,21 @@ export class PatientBookingPage {
     await this.page
       .getByRole('button', { name: 'Confirm appointment' })
       .click()
+  }
+
+  async waitForBookingOutcome() {
+    await this.page.waitForURL((url) =>
+      url.pathname === '/appointments'
+      || /^\/appointments\/confirmation\/APT-[A-Z0-9]{8}$/.test(
+        url.pathname,
+      ),
+    )
+  }
+
+  isBookingConfirmed() {
+    return /^\/appointments\/confirmation\/APT-[A-Z0-9]{8}$/.test(
+      new URL(this.page.url()).pathname,
+    )
   }
 
   async bookingReference() {

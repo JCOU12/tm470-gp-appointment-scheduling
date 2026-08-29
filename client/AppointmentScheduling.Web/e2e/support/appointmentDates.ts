@@ -16,6 +16,16 @@ export function appointmentNamePattern(date: string, time: string): RegExp {
   return new RegExp(escapeRegularExpression(accessibleName), 'i')
 }
 
+export function appointmentNamePatternFromUtc(value: string): RegExp {
+  const formattedDateTime = new Intl.DateTimeFormat('en-GB', {
+    dateStyle: 'full',
+    timeStyle: 'short',
+    timeZone: 'Europe/London',
+  }).format(new Date(value))
+
+  return new RegExp(escapeRegularExpression(formattedDateTime), 'i')
+}
+
 function escapeRegularExpression(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }

@@ -143,4 +143,11 @@ with:
 npm run test:e2e:accessibility
 ```
 
-The end-to-end configuration starts the API and client on dedicated test ports, uses a separate `E2E` .NET build configuration and resets only `appointment-scheduling-e2e.db`. It therefore does not interfere with a development server or change the normal development database. The suite uses page objects and custom Playwright fixtures to keep user-facing locators and reusable page actions separate from the journey assertions. Axe checks identify automatically detectable issues, while the keyboard journey verifies that a patient can complete the principal booking and cancellation flow without a pointing device. These checks complement rather than replace manual accessibility and inclusive usability testing.
+Run the responsive patient and staff journeys in the emulated mobile project
+with:
+
+```powershell
+npm run test:e2e:responsive
+```
+
+The end-to-end configuration starts the API and client on dedicated test ports, uses a separate `E2E` .NET build configuration and resets only `appointment-scheduling-e2e.db`. It therefore does not interfere with a development server or change the normal development database. The suite uses page objects and custom Playwright fixtures to keep user-facing locators and reusable page actions separate from the journey assertions. Axe checks identify automatically detectable issues, while the keyboard journey verifies that a patient can complete the principal booking and cancellation flow without a pointing device. The mobile Chromium project emulates touch input at a 320 CSS-pixel viewport and verifies the principal patient and staff journeys without page-level horizontal overflow. These checks complement rather than replace manual accessibility and inclusive usability testing.

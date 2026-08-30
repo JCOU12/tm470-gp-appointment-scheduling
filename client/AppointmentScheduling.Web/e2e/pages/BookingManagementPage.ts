@@ -5,6 +5,7 @@ export class BookingManagementPage {
   readonly cancelledHeading: Locator
   readonly confirmCancellationButton: Locator
   readonly detailsHeading: Locator
+  readonly keepBookingLink: Locator
   readonly page: Page
   readonly statusAlert: Locator
 
@@ -22,6 +23,7 @@ export class BookingManagementPage {
     this.confirmCancellationButton = page.getByRole('button', {
       name: 'Yes, cancel booking',
     })
+    this.keepBookingLink = page.getByRole('link', { name: 'Keep booking' })
     this.statusAlert = page.getByRole('alert')
   }
 

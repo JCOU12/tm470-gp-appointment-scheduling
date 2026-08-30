@@ -14,6 +14,10 @@ interface AppointmentSlotResponse {
   endsAtUtc: string
 }
 
+interface BookingResponse {
+  bookingReference: string
+}
+
 export interface AvailabilitySessionResponse {
   availabilitySessionId: number
   clinicianId: number
@@ -43,5 +47,19 @@ export class SchedulingApi {
     }
 
     return (await response.json()) as AvailabilitySessionResponse
+  }
+
+  async createBooking(appointmentSlotId: number, patientDisplayName: string) {
+    const response = await this.request.post('/api/bookings', {
+      data: { appointmentSlotId, patientDisplayName },
+    })
+
+    if (!response.ok()) {
+      throw new Error(
+        `Could not book the appointment: ${response.status()} ${await response.text()}`,
+      )
+    }
+
+    return (await response.json()) as BookingResponse
   }
 }

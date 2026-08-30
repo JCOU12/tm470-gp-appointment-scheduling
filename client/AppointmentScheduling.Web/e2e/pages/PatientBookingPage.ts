@@ -11,6 +11,7 @@ export class PatientBookingPage {
   readonly mainContent: Locator
   readonly page: Page
   readonly patientNameInput: Locator
+  readonly patientTaskCards: Locator
   readonly reviewHeading: Locator
   readonly selectionHeading: Locator
   readonly skipLink: Locator
@@ -36,6 +37,7 @@ export class PatientBookingPage {
     })
     this.mainContent = page.getByRole('main')
     this.patientNameInput = page.getByLabel('Patient name')
+    this.patientTaskCards = page.locator('.journey-card-grid .nhsuk-card')
     this.reviewHeading = page.getByRole('heading', {
       name: 'Check your appointment details',
     })
@@ -107,6 +109,12 @@ export class PatientBookingPage {
 
   appointment(accessibleName: RegExp) {
     return this.page.getByRole('radio', { name: accessibleName })
+  }
+
+  appointmentOption(accessibleName: RegExp) {
+    return this.page.locator('label.slot-option').filter({
+      has: this.appointment(accessibleName),
+    })
   }
 }
 

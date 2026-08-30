@@ -35,6 +35,16 @@ export default defineConfig({
         viewport: { width: 320, height: 720 },
       },
     },
+    {
+      name: 'firefox',
+      testMatch: /browser-compatibility\.spec\.ts/,
+      use: { ...devices['Desktop Firefox'] },
+    },
+    {
+      name: 'webkit',
+      testMatch: /browser-compatibility\.spec\.ts/,
+      use: { ...devices['Desktop Safari'] },
+    },
   ],
   webServer: [
     {

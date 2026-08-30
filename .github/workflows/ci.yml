@@ -155,8 +155,8 @@ jobs:
       - name: Install locked frontend dependencies
         run: npm ci
 
-      - name: Install Chromium
-        run: npx playwright install --with-deps chromium
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox webkit
 
       - name: Run end-to-end journeys
         run: npm run test:e2e

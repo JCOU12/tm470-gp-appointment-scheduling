@@ -150,4 +150,12 @@ with:
 npm run test:e2e:responsive
 ```
 
-The end-to-end configuration starts the API and client on dedicated test ports, uses a separate `E2E` .NET build configuration and resets only `appointment-scheduling-e2e.db`. It therefore does not interfere with a development server or change the normal development database. The suite uses page objects and custom Playwright fixtures to keep user-facing locators and reusable page actions separate from the journey assertions. Axe checks identify automatically detectable issues, while the keyboard journey verifies that a patient can complete the principal booking and cancellation flow without a pointing device. The mobile Chromium project emulates touch input at a 320 CSS-pixel viewport and verifies the principal patient and staff journeys without page-level horizontal overflow. These checks complement rather than replace manual accessibility and inclusive usability testing.
+Install all three browser engines and run the principal compatibility journey
+with:
+
+```powershell
+npx playwright install chromium firefox webkit
+npm run test:e2e:browsers
+```
+
+The end-to-end configuration starts the API and client on dedicated test ports, uses a separate `E2E` .NET build configuration and resets only `appointment-scheduling-e2e.db`. It therefore does not interfere with a development server or change the normal development database. The suite uses page objects and custom Playwright fixtures to keep user-facing locators and reusable page actions separate from the journey assertions. Axe checks identify automatically detectable issues, while the keyboard journey verifies that a patient can complete the principal booking and cancellation flow without a pointing device. The mobile Chromium project emulates touch input at a 320 CSS-pixel viewport and verifies the principal patient and staff journeys without page-level horizontal overflow. The principal staff-to-patient journey also runs through the Chromium, Firefox and WebKit browser engines. These checks complement rather than replace manual accessibility and inclusive usability testing.

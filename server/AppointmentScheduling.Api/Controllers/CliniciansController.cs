@@ -8,7 +8,7 @@ namespace AppointmentScheduling.Api.Controllers;
 [ApiController]
 [Route("api/clinicians")]
 [Tags("Clinicians")]
-public class CliniciansController : ControllerBase
+public sealed class CliniciansController : ControllerBase
 {
     private readonly AppointmentDbContext _dbContext;
 

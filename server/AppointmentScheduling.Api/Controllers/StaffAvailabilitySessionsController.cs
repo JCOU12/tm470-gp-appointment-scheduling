@@ -47,23 +47,17 @@ public sealed class StaffAvailabilitySessionsController : ControllerBase
         }
         catch (AvailabilitySessionValidationException exception)
         {
-            return BadRequest(
-                new ProblemDetails
-                {
-                    Title = "Invalid availability session",
-                    Detail = exception.Message,
-                    Status = StatusCodes.Status400BadRequest
-                });
+            return Problem(
+                title: "Invalid availability session",
+                detail: exception.Message,
+                statusCode: StatusCodes.Status400BadRequest);
         }
         catch (AvailabilitySessionConflictException exception)
         {
-            return Conflict(
-                new ProblemDetails
-                {
-                    Title = "Availability session conflict",
-                    Detail = exception.Message,
-                    Status = StatusCodes.Status409Conflict
-                });
+            return Problem(
+                title: "Availability session conflict",
+                detail: exception.Message,
+                statusCode: StatusCodes.Status409Conflict);
         }
 
         var response = new AvailabilitySessionResponse(

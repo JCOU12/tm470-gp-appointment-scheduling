@@ -46,13 +46,10 @@ public sealed class StaffBookingsController : ControllerBase
         }
         catch (StaffBookingQueryValidationException exception)
         {
-            return BadRequest(
-                new ProblemDetails
-                {
-                    Title = "Invalid staff booking query",
-                    Detail = exception.Message,
-                    Status = StatusCodes.Status400BadRequest
-                });
+            return Problem(
+                title: "Invalid staff booking query",
+                detail: exception.Message,
+                statusCode: StatusCodes.Status400BadRequest);
         }
     }
 

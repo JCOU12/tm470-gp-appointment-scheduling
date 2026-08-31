@@ -273,7 +273,7 @@ function CreateAvailabilityPage() {
         (clinician) => clinician.clinicianId === Number(clinicianId),
       )?.name
 
-      navigate('/staff/availability/confirmation', {
+      void navigate('/staff/availability/confirmation', {
         replace: true,
         state: {
           availabilitySession,
@@ -510,7 +510,7 @@ function CreateUnavailablePeriodPage() {
         (clinician) => clinician.clinicianId === Number(clinicianId),
       )?.name
 
-      navigate('/staff/unavailable-periods/confirmation', {
+      void navigate('/staff/unavailable-periods/confirmation', {
         replace: true,
         state: {
           unavailablePeriod,

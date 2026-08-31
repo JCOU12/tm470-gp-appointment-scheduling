@@ -10,7 +10,7 @@ test.describe('booking integrity journeys', () => {
     concurrentPatients,
     schedulingApi,
   }, testInfo) => {
-    const appointmentDate = futureDate(9 + testInfo.retry * 10)
+    const appointmentDate = futureDate(9 + testInfo.retry * 30)
     const availability = await schedulingApi.createAvailability({
       clinicianId: 1,
       date: appointmentDate,
@@ -70,7 +70,7 @@ test.describe('booking integrity journeys', () => {
     patientBookingPage,
     schedulingApi,
   }, testInfo) => {
-    const appointmentDate = futureDate(10 + testInfo.retry * 10)
+    const appointmentDate = futureDate(10 + testInfo.retry * 30)
     const availability = await schedulingApi.createAvailability({
       clinicianId: 1,
       date: appointmentDate,

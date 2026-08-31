@@ -15,7 +15,7 @@ test.describe('accessible appointment journeys', () => {
     patientBookingPage,
     schedulingApi,
   }, testInfo) => {
-    const appointmentDate = futureDate(12 + testInfo.retry * 10)
+    const appointmentDate = futureDate(12 + testInfo.retry * 30)
     const availability = await schedulingApi.createAvailability({
       clinicianId: 1,
       date: appointmentDate,
@@ -80,7 +80,7 @@ test.describe('accessible appointment journeys', () => {
     patientBookingPage,
     schedulingApi,
   }, testInfo) => {
-    const appointmentDate = futureDate(13 + testInfo.retry * 10)
+    const appointmentDate = futureDate(13 + testInfo.retry * 30)
     const availability = await schedulingApi.createAvailability({
       clinicianId: 1,
       date: appointmentDate,

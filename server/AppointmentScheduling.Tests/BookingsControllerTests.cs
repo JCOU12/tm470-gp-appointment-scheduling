@@ -247,6 +247,9 @@ public sealed class BookingsControllerTests
     [InlineData("12")]
     [InlineData("BOOK-2BCDEFGH")]
     [InlineData("APT-TOO-SHORT")]
+    [InlineData("APT-0BCDEFGH")]
+    [InlineData("APT-IBCDEFGH")]
+    [InlineData("APT-OBCDEFGH")]
     public async Task GetByReference_InvalidReference_ReturnsBadRequest(
         string bookingReference)
     {

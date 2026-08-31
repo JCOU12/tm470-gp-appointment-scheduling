@@ -10,7 +10,7 @@ test.describe('staff booking journeys', () => {
     schedulingApi,
     staffBookingsPage,
   }, testInfo) => {
-    const appointmentDate = futureDate(11 + testInfo.retry * 10)
+    const appointmentDate = futureDate(11 + testInfo.retry * 30)
     const availability = await schedulingApi.createAvailability({
       clinicianId: 1,
       date: appointmentDate,

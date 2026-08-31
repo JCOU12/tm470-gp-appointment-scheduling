@@ -229,19 +229,19 @@ describe('staff appointment workflow', () => {
       toUtc: new Date('2026-08-21T00:00').toISOString(),
       status: 'Cancelled',
     })
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      3,
+    expect(fetchMock.mock.calls[2]?.[0]).toBe(
       `/api/staff/bookings?${expectedQuery.toString()}`,
-      expect.objectContaining({ headers: expect.any(Object) }),
     )
+    expect(fetchMock.mock.calls[2]?.[1]?.headers).toMatchObject({
+      Accept: 'application/json',
+    })
 
     await user.click(screen.getByRole('button', { name: /clear filters/i }))
     expect(await screen.findByText('1 booking found')).toBeInTheDocument()
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      4,
-      '/api/staff/bookings',
-      expect.objectContaining({ headers: expect.any(Object) }),
-    )
+    expect(fetchMock.mock.calls[3]?.[0]).toBe('/api/staff/bookings')
+    expect(fetchMock.mock.calls[3]?.[1]?.headers).toMatchObject({
+      Accept: 'application/json',
+    })
   })
 
   it('shows scheduling conflicts returned by the API', async () => {

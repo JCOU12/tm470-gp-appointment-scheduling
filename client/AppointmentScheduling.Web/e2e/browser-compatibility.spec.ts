@@ -26,7 +26,7 @@ test.describe('browser-compatible appointment journey', () => {
       )
     }
 
-    const appointmentDate = futureDate(projectOffset + testInfo.retry * 10)
+    const appointmentDate = futureDate(projectOffset + testInfo.retry * 30)
 
     await staffHomePage.goto()
     await staffHomePage.openCreateAvailability()

@@ -12,7 +12,7 @@ test.describe('appointment scheduling journeys', () => {
     patientBookingPage,
     staffHomePage,
   }, testInfo) => {
-    const appointmentDate = futureDate(7 + testInfo.retry * 10)
+    const appointmentDate = futureDate(7 + testInfo.retry * 30)
 
     await staffHomePage.goto()
     await expect(staffHomePage.heading).toBeVisible()
@@ -66,7 +66,7 @@ test.describe('appointment scheduling journeys', () => {
     patientBookingPage,
     unavailablePeriodPage,
   }, testInfo) => {
-    const appointmentDate = futureDate(8 + testInfo.retry * 10)
+    const appointmentDate = futureDate(8 + testInfo.retry * 30)
 
     await availabilityPage.goto()
     await availabilityPage.createAvailability({

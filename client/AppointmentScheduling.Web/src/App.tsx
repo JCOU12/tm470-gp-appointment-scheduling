@@ -41,6 +41,10 @@ const emptyDraft: BookingDraft = {
   patientDisplayName: '',
 }
 
+const bookingReferencePattern = /^APT-[2-9A-HJ-NP-Z]{8}$/
+const bookingReferenceFormatMessage =
+  'Enter a booking reference in the format APT- followed by 8 letters or numbers, excluding 0, 1, I and O.'
+
 function errorMessage(error: unknown): string {
   if (error instanceof ApiError) {
     return error.message
@@ -232,7 +236,7 @@ function AppointmentSelectionPage({
       return
     }
 
-    navigate('/appointments/details')
+    void navigate('/appointments/details')
   }
 
   return (
@@ -295,7 +299,7 @@ function PatientDetailsPage({
       ...current,
       patientDisplayName: current.patientDisplayName.trim(),
     }))
-    navigate('/appointments/review')
+    void navigate('/appointments/review')
   }
 
   return (
@@ -374,7 +378,7 @@ function ReviewAppointmentPage({ draft }: { draft: BookingDraft }) {
         appointmentSlotId: draft.selectedSlot.appointmentSlotId,
         patientDisplayName: draft.patientDisplayName,
       })
-      navigate(`/appointments/confirmation/${booking.bookingReference}`, {
+      void navigate(`/appointments/confirmation/${booking.bookingReference}`, {
         replace: true,
         state: { booking } satisfies RouteState,
       })
@@ -382,7 +386,7 @@ function ReviewAppointmentPage({ draft }: { draft: BookingDraft }) {
       const message = errorMessage(error)
 
       if (error instanceof ApiError && error.status === 409) {
-        navigate('/appointments', {
+        void navigate('/appointments', {
           replace: true,
           state: { error: message } satisfies RouteState,
         })
@@ -461,7 +465,7 @@ function useRouteBooking() {
     stateBooking?.bookingReference === normalisedBookingReference
       ? stateBooking
       : null
-  const isValidBookingReference = /^APT-[A-Z0-9]{8}$/.test(
+  const isValidBookingReference = bookingReferencePattern.test(
     normalisedBookingReference,
   )
   const [bookingResult, setBookingResult] = useState<{
@@ -513,7 +517,7 @@ function useRouteBooking() {
       : null
   const booking = matchingStateBooking ?? loadedBooking
   const error = !isValidBookingReference
-    ? 'Enter a booking reference in the format APT- followed by 8 letters or numbers.'
+    ? bookingReferenceFormatMessage
     : errorResult?.bookingReference === normalisedBookingReference
       ? errorResult.message
       : null
@@ -552,11 +556,11 @@ function BookingConfirmationPage({ resetDraft }: { resetDraft: () => void }) {
           booking={booking}
           isCancelling={false}
           isConfirmingCancellation={false}
-          onStartCancellation={() =>
-            navigate(`/bookings/${normalisedBookingReference}/cancel`, {
+          onStartCancellation={() => {
+            void navigate(`/bookings/${normalisedBookingReference}/cancel`, {
               state: { booking } satisfies RouteState,
             })
-          }
+          }}
           onKeepBooking={() => undefined}
           onConfirmCancellation={() => undefined}
         />
@@ -578,14 +582,12 @@ function BookingLookupPage() {
     event.preventDefault()
     const normalisedReference = bookingReference.trim().toUpperCase()
 
-    if (!/^APT-[A-Z0-9]{8}$/.test(normalisedReference)) {
-      setValidationError(
-        'Enter a booking reference in the format APT- followed by 8 letters or numbers.',
-      )
+    if (!bookingReferencePattern.test(normalisedReference)) {
+      setValidationError(bookingReferenceFormatMessage)
       return
     }
 
-    navigate(`/bookings/${normalisedReference}`)
+    void navigate(`/bookings/${normalisedReference}`)
   }
 
   return (
@@ -652,11 +654,11 @@ function BookingDetailsPage() {
           booking={booking}
           isCancelling={false}
           isConfirmingCancellation={false}
-          onStartCancellation={() =>
-            navigate(`/bookings/${normalisedBookingReference}/cancel`, {
+          onStartCancellation={() => {
+            void navigate(`/bookings/${normalisedBookingReference}/cancel`, {
               state: { booking } satisfies RouteState,
             })
-          }
+          }}
           onKeepBooking={() => undefined}
           onConfirmCancellation={() => undefined}
         />
@@ -682,7 +684,7 @@ function CancelBookingPage() {
 
     try {
       const cancelledBooking = await cancelBooking(booking.bookingReference)
-      navigate(`/bookings/${booking.bookingReference}/cancelled`, {
+      void navigate(`/bookings/${booking.bookingReference}/cancelled`, {
         replace: true,
         state: { booking: cancelledBooking } satisfies RouteState,
       })

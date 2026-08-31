@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddProblemDetails();
 
 builder.Services.AddDbContext<AppointmentDbContext>(options =>
     options.UseSqlite(
@@ -53,8 +54,11 @@ if (app.Environment.IsDevelopment())
 
 if (!app.Environment.IsDevelopment())
 {
+    app.UseExceptionHandler();
     app.UseHttpsRedirection();
 }
+
+app.UseStatusCodePages();
 
 app.MapControllers();
 

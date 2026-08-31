@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Logging;
 
@@ -67,6 +68,39 @@ public sealed class ApiDocumentationTests :
             "/api/staff/unavailable-periods",
             "post");
         AssertOperationHasSummary(paths, "/api/staff/bookings", "get");
+    }
+
+    [Fact]
+    public async Task UnknownApiRoute_ReturnsProblemDetailsInProduction()
+    {
+        using var productionFactory = new WebApplicationFactory<Program>()
+            .WithWebHostBuilder(builder =>
+            {
+                builder.UseEnvironment("Production");
+                builder.ConfigureLogging(logging => logging.ClearProviders());
+            });
+        using var client = productionFactory.CreateClient(
+            new WebApplicationFactoryClientOptions
+            {
+                BaseAddress = new Uri("https://localhost")
+            });
+
+        using var request = new HttpRequestMessage(
+            HttpMethod.Get,
+            "/api/unknown-route");
+        request.Headers.Accept.ParseAdd("application/json");
+
+        var response = await client.SendAsync(request);
+        await using var contentStream = await response.Content.ReadAsStreamAsync();
+        using var document = await JsonDocument.ParseAsync(contentStream);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal(
+            "application/problem+json",
+            response.Content.Headers.ContentType?.MediaType);
+        Assert.Equal(
+            StatusCodes.Status404NotFound,
+            document.RootElement.GetProperty("status").GetInt32());
     }
 
     private static void AssertOperationHasSummary(

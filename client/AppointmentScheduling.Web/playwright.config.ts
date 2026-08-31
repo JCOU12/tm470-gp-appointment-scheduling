@@ -24,7 +24,7 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      testIgnore: /responsive\.spec\.ts/,
+      testIgnore: [/responsive\.spec\.ts/, /reflow\.spec\.ts/],
       use: { ...devices['Desktop Chrome'] },
     },
     {
@@ -32,6 +32,14 @@ export default defineConfig({
       testMatch: /responsive\.spec\.ts/,
       use: {
         ...devices['Pixel 5'],
+        viewport: { width: 320, height: 720 },
+      },
+    },
+    {
+      name: 'desktop-reflow',
+      testMatch: /reflow\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
         viewport: { width: 320, height: 720 },
       },
     },

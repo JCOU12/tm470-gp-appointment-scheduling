@@ -6,6 +6,9 @@
 # dotenv files
 .env
 
+# Local project and report working notes
+/docs/
+
 # User-specific files
 *.rsuser
 *.suo

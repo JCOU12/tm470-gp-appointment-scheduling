@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { focusMainContent } from '../focusMainContent'
 
 interface ServiceLayoutProps {
   activeArea: 'patient' | 'staff'
@@ -8,7 +9,12 @@ interface ServiceLayoutProps {
 export function ServiceLayout({ activeArea, children }: ServiceLayoutProps) {
   return (
     <>
-      <a className="nhsuk-skip-link" href="#main-content">
+      <a
+        className="nhsuk-skip-link"
+        data-module="nhsuk-skip-link"
+        href="#main-content"
+        onClick={focusMainContent}
+      >
         Skip to main content
       </a>
 

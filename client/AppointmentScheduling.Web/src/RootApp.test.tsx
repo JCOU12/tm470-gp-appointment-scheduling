@@ -28,6 +28,9 @@ describe('application routes', () => {
     expect(
       screen.getByRole('link', { name: /skip to main content/i }),
     ).toHaveClass('nhsuk-skip-link')
+    expect(
+      screen.getByRole('link', { name: /skip to main content/i }),
+    ).toHaveAttribute('data-module', 'nhsuk-skip-link')
   })
 
   it('shows the staff workflow at the staff path', async () => {

@@ -16,6 +16,7 @@
     "test:e2e:accessibility": "playwright test accessibility.spec.ts",
     "test:e2e:browsers": "playwright test browser-compatibility.spec.ts",
     "test:e2e:headed": "playwright test --headed",
+    "test:e2e:reflow": "playwright test --project=desktop-reflow",
     "test:e2e:responsive": "playwright test --project=mobile-chromium",
     "test:e2e:ui": "playwright test --ui"
   },

@@ -32,8 +32,14 @@ test.describe('accessible appointment journeys', () => {
     await expect(patientBookingPage.skipLink).toBeFocused()
     await page.keyboard.press('Enter')
     await expect(patientBookingPage.mainContent).toBeFocused()
+    await expect(patientBookingPage.mainContent).toHaveClass(
+      /nhsuk-skip-link-focused-element/,
+    )
 
     await tabTo(page, patientBookingPage.bookAppointmentLink)
+    await expect(patientBookingPage.mainContent).not.toHaveClass(
+      /nhsuk-skip-link-focused-element/,
+    )
     await page.keyboard.press('Enter')
     await expect(patientBookingPage.selectionHeading).toBeVisible()
     await expect(patientBookingPage.mainContent).toBeFocused()

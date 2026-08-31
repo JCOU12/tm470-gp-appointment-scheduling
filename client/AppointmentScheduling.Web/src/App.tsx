@@ -22,6 +22,7 @@ import { BookingPanel } from './components/BookingPanel'
 import { ErrorSummary } from './components/ErrorSummary'
 import { ServiceLayout } from './components/ServiceLayout'
 import { SuccessMessage } from './components/SuccessMessage'
+import { focusMainContent } from './focusMainContent'
 import { formatAppointmentDateTime } from './formatDateTime'
 import './App.css'
 
@@ -58,7 +59,7 @@ function PatientRouteFocus() {
     }
 
     previousPathname.current = pathname
-    document.getElementById('main-content')?.focus()
+    focusMainContent()
   }, [pathname])
 
   return null

@@ -112,6 +112,9 @@ describe('staff appointment workflow', () => {
       screen.getByRole('link', { name: /create availability/i }),
     )
     expect(screen.getByRole('main')).toHaveFocus()
+    expect(screen.getByRole('main')).toHaveClass(
+      'nhsuk-skip-link-focused-element',
+    )
     await screen.findByRole('heading', {
       name: /create an availability session/i,
     })

@@ -52,6 +52,9 @@ async function reachReviewPage() {
     name: /Dr Maya Patel/i,
   })
   expect(screen.getByRole('main')).toHaveFocus()
+  expect(screen.getByRole('main')).toHaveClass(
+    'nhsuk-skip-link-focused-element',
+  )
   await user.click(appointment)
   await user.click(screen.getByRole('button', { name: /continue/i }))
 

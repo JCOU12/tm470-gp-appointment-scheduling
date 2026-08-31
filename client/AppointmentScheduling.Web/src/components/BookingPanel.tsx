@@ -1,5 +1,6 @@
 import type { Booking } from '../api/appointmentApi'
 import { formatAppointmentDateTime } from '../formatDateTime'
+import { formatBookingStatus } from '../formatBookingStatus'
 
 interface BookingPanelProps {
   booking: Booking
@@ -38,7 +39,7 @@ export function BookingPanel({
               isActive ? 'status-active' : 'status-cancelled'
             }`}
           >
-            {booking.status}
+            {formatBookingStatus(booking.status)}
           </span>
         </div>
 

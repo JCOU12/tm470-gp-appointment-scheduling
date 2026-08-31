@@ -1,5 +1,8 @@
+import { useState } from 'react'
 import type { AvailableAppointmentSlot } from '../api/appointmentApi'
 import { formatAppointmentDateTime } from '../formatDateTime'
+
+const appointmentsPerPage = 6
 
 interface AvailableAppointmentsProps {
   slots: AvailableAppointmentSlot[]
@@ -20,6 +23,22 @@ export function AvailableAppointments({
   onSelect,
   onRetry,
 }: AvailableAppointmentsProps) {
+  const [requestedPage, setRequestedPage] = useState<number | null>(null)
+  const pageCount = Math.max(1, Math.ceil(slots.length / appointmentsPerPage))
+  const selectedSlotIndex = slots.findIndex(
+    (slot) => slot.appointmentSlotId === selectedSlotId,
+  )
+  const selectedSlotPage =
+    selectedSlotIndex === -1
+      ? 1
+      : Math.floor(selectedSlotIndex / appointmentsPerPage) + 1
+  const currentPage = Math.min(requestedPage ?? selectedSlotPage, pageCount)
+  const firstVisibleSlot = (currentPage - 1) * appointmentsPerPage
+  const visibleSlots = slots.slice(
+    firstVisibleSlot,
+    firstVisibleSlot + appointmentsPerPage,
+  )
+
   return (
     <section className="nhsuk-card panel" aria-labelledby="available-heading">
       <div className="nhsuk-card__content">
@@ -75,7 +94,7 @@ export function AvailableAppointments({
               Available appointments
             </legend>
             <ul className="slot-list">
-              {slots.map((slot) => (
+              {visibleSlots.map((slot) => (
                 <li key={slot.appointmentSlotId}>
                   <label
                     className={`slot-option${
@@ -104,6 +123,62 @@ export function AvailableAppointments({
                 </li>
               ))}
             </ul>
+
+            {pageCount > 1 && (
+              <nav
+                className="appointment-pagination"
+                aria-label="Appointment pages"
+              >
+                <p className="appointment-page-summary">
+                  Page {currentPage} of {pageCount}
+                </p>
+                <ul className="appointment-page-list">
+                  {currentPage > 1 && (
+                    <li>
+                      <button
+                        className="appointment-page-link"
+                        type="button"
+                        onClick={() => setRequestedPage(currentPage - 1)}
+                      >
+                        Previous
+                      </button>
+                    </li>
+                  )}
+                  {Array.from({ length: pageCount }, (_, index) => index + 1).map(
+                    (pageNumber) => (
+                      <li key={pageNumber}>
+                        <button
+                          className={`appointment-page-link${
+                            pageNumber === currentPage
+                              ? ' appointment-page-link-current'
+                              : ''
+                          }`}
+                          type="button"
+                          aria-current={
+                            pageNumber === currentPage ? 'page' : undefined
+                          }
+                          aria-label={`Page ${pageNumber}`}
+                          onClick={() => setRequestedPage(pageNumber)}
+                        >
+                          {pageNumber}
+                        </button>
+                      </li>
+                    ),
+                  )}
+                  {currentPage < pageCount && (
+                    <li>
+                      <button
+                        className="appointment-page-link"
+                        type="button"
+                        onClick={() => setRequestedPage(currentPage + 1)}
+                      >
+                        Next
+                      </button>
+                    </li>
+                  )}
+                </ul>
+              </nav>
+            )}
           </fieldset>
         )}
       </div>

@@ -24,6 +24,7 @@ import { ServiceLayout } from './components/ServiceLayout'
 import { SuccessMessage } from './components/SuccessMessage'
 import { focusMainContent } from './focusMainContent'
 import { formatAppointmentDateTime } from './formatDateTime'
+import { formatBookingStatus } from './formatBookingStatus'
 import './App.css'
 
 interface BookingDraft {
@@ -114,8 +115,10 @@ function BookingSummary({ booking }: { booking: Booking }) {
         </dd>
       </div>
       <div className="nhsuk-summary-list__row">
-        <dt className="nhsuk-summary-list__key">Status</dt>
-        <dd className="nhsuk-summary-list__value">{booking.status}</dd>
+        <dt className="nhsuk-summary-list__key">Appointment status</dt>
+        <dd className="nhsuk-summary-list__value">
+          {formatBookingStatus(booking.status)}
+        </dd>
       </div>
     </dl>
   )
@@ -142,8 +145,7 @@ function PatientStartPage() {
               </Link>
             </h2>
             <p className="nhsuk-card__description">
-              Choose an available appointment and receive immediate
-              confirmation.
+              Choose an available appointment.
             </p>
           </div>
         </article>
@@ -156,8 +158,7 @@ function PatientStartPage() {
               </Link>
             </h2>
             <p className="nhsuk-card__description">
-              Use your booking reference to check appointment details or
-              cancel.
+              Check appointment details or cancel.
             </p>
           </div>
         </article>
@@ -291,7 +292,7 @@ function PatientDetailsPage({
     event.preventDefault()
 
     if (draft.patientDisplayName.trim().length === 0) {
-      setFormError('Enter the patient name.')
+      setFormError('Enter your name.')
       return
     }
 
@@ -309,10 +310,10 @@ function PatientDetailsPage({
       </Link>
       <PageIntroduction
         caption="Book an appointment"
-        heading="Enter patient details"
+        heading="Enter your name"
       >
         <p className="nhsuk-body-l">
-          Enter the details associated with this booking.
+          Enter your name for this appointment.
         </p>
       </PageIntroduction>
       <ErrorSummary message={formError} />
@@ -431,13 +432,13 @@ function ReviewAppointmentPage({ draft }: { draft: BookingDraft }) {
           </dd>
         </div>
         <div className="nhsuk-summary-list__row">
-          <dt className="nhsuk-summary-list__key">Patient name</dt>
+          <dt className="nhsuk-summary-list__key">Name</dt>
           <dd className="nhsuk-summary-list__value">
             {draft.patientDisplayName}
           </dd>
           <dd className="nhsuk-summary-list__actions">
             <Link to="/appointments/details">
-              Change<span className="nhsuk-u-visually-hidden"> patient name</span>
+              Change<span className="nhsuk-u-visually-hidden"> name</span>
             </Link>
           </dd>
         </div>
@@ -546,7 +547,7 @@ function BookingConfirmationPage({ resetDraft }: { resetDraft: () => void }) {
         message={
           booking === null
             ? null
-            : `Booking ${booking.bookingReference} has been confirmed.`
+            : `Your appointment is confirmed. Make a note of your booking reference: ${booking.bookingReference}.`
         }
       />
       <ErrorSummary message={error} />

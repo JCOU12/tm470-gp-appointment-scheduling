@@ -44,7 +44,10 @@ test.describe('accessible appointment journeys', () => {
     await expect(patientBookingPage.selectionHeading).toBeVisible()
     await expect(patientBookingPage.mainContent).toBeFocused()
 
-    const appointment = patientBookingPage.appointment(appointmentName)
+    const appointment = await patientBookingPage.showAppointment(
+      appointmentName,
+      true,
+    )
     await tabTo(page, appointment)
     await page.keyboard.press('Space')
     await expect(appointment).toBeChecked()

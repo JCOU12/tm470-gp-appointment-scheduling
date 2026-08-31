@@ -60,9 +60,11 @@ test.describe('booking integrity journeys', () => {
     await expect(unsuccessfulPatient!.confirmationAlert).toContainText(
       /already been booked|no longer available/i,
     )
-    await expect(
-      unsuccessfulPatient!.appointmentsOn(formattedDate(appointmentDate)),
-    ).toHaveCount(0)
+    const unavailableAppointments =
+      await unsuccessfulPatient!.findAppointmentsOn(
+        formattedDate(appointmentDate),
+      )
+    await expect(unavailableAppointments).toHaveCount(0)
   })
 
   test('cancelling an appointment releases it for another patient', async ({

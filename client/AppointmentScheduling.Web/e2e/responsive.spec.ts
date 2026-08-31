@@ -35,6 +35,7 @@ test.describe('responsive appointment journeys', () => {
 
     await patientBookingPage.startBooking()
     await expect(patientBookingPage.selectionHeading).toBeVisible()
+    await patientBookingPage.showAppointment(appointmentName)
     await expectMinimumTouchTarget(
       patientBookingPage.appointmentOption(appointmentName),
     )

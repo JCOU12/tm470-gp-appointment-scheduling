@@ -42,6 +42,6 @@ test.describe('staff booking journeys', () => {
     const bookingRow = staffBookingsPage.bookingRow(bookingReference)
     await expect(bookingRow).toContainText('Jamie Taylor')
     await expect(bookingRow).toContainText('Dr Maya Patel')
-    await expect(bookingRow).toContainText('Active')
+    await expect(bookingRow).toContainText('Confirmed')
   })
 })

@@ -134,6 +134,60 @@
   font-size: 0.9rem;
 }
 
+.appointment-pagination {
+  margin-top: 1.5rem;
+}
+
+.appointment-page-summary {
+  margin-bottom: 0.75rem;
+}
+
+.appointment-page-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.appointment-page-link {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  border: 0;
+  color: #005eb8;
+  background: transparent;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.appointment-page-link:hover {
+  color: #7c2855;
+  text-decoration-thickness: max(3px, 0.1875rem);
+}
+
+.appointment-page-link:focus {
+  outline: 3px solid transparent;
+  color: #212b32;
+  background-color: #ffeb3b;
+  box-shadow: 0 -2px #ffeb3b, 0 4px #212b32;
+  text-decoration: none;
+}
+
+.appointment-page-link-current {
+  color: #fff;
+  background: #005eb8;
+  text-decoration: none;
+}
+
+.appointment-page-link-current:hover {
+  color: #fff;
+}
+
 .form-group {
   max-width: 34rem;
 }
@@ -243,17 +297,49 @@
 
 .booking-filters {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-areas:
+    'clinician status'
+    'dates dates'
+    'submit submit';
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: end;
-  gap: 1rem;
+  gap: 2rem 1.5rem;
   margin-top: 1.5rem;
 }
 
 .booking-filters .form-group {
+  min-width: 0;
   margin-bottom: 0;
 }
 
+.booking-filter-clinician {
+  grid-area: clinician;
+}
+
+.booking-filter-status {
+  grid-area: status;
+}
+
+.date-filter-group {
+  grid-area: dates;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.date-filter-group .nhsuk-hint {
+  margin: 0.75rem 0 0;
+}
+
+.date-filter-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
 .filter-button {
+  grid-area: submit;
   justify-self: start;
   margin-bottom: 0;
 }
@@ -302,7 +388,22 @@
 
 @media (max-width: 58rem) {
   .booking-filters {
+    grid-template-areas:
+      'clinician'
+      'dates'
+      'status'
+      'submit';
     grid-template-columns: 1fr;
+    row-gap: 2rem;
+  }
+
+  .date-filter-group {
+    grid-area: dates;
+  }
+
+  .date-filter-fields {
+    grid-template-columns: 1fr;
+    row-gap: 2rem;
   }
 }
 

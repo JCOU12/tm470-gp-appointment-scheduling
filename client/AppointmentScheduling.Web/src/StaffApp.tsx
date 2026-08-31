@@ -24,6 +24,7 @@ import { ServiceLayout } from './components/ServiceLayout'
 import { SuccessMessage } from './components/SuccessMessage'
 import { focusMainContent } from './focusMainContent'
 import { formatAppointmentDateTime } from './formatDateTime'
+import { formatBookingStatus } from './formatBookingStatus'
 import './App.css'
 
 interface StaffRouteState {
@@ -169,8 +170,7 @@ function StaffStartPage() {
         heading="Manage appointment scheduling"
       >
         <p className="nhsuk-body-l">
-          Choose a task to manage clinician availability or review patient
-          bookings.
+          Manage when clinicians can see patients or review patient bookings.
         </p>
       </PageIntroduction>
 
@@ -186,8 +186,7 @@ function StaffStartPage() {
               </Link>
             </h2>
             <p className="nhsuk-card__description">
-              Define when a clinician is available and generate appointment
-              slots.
+              Add the dates and times a clinician can see patients.
             </p>
           </div>
         </article>
@@ -203,8 +202,7 @@ function StaffStartPage() {
               </Link>
             </h2>
             <p className="nhsuk-card__description">
-              Prevent appointments from being offered while a clinician is
-              unavailable.
+              Add time when a clinician cannot see patients.
             </p>
           </div>
         </article>
@@ -217,7 +215,7 @@ function StaffStartPage() {
               </Link>
             </h2>
             <p className="nhsuk-card__description">
-              Filter patient bookings by clinician, date and status.
+              Find and review patient bookings.
             </p>
           </div>
         </article>
@@ -536,7 +534,7 @@ function CreateUnavailablePeriodPage() {
       >
         <p className="nhsuk-body-l">
           Appointments that overlap this period will no longer be offered.
-          Existing active bookings are protected.
+          Appointments that have already been booked will not be affected.
         </p>
       </PageIntroduction>
       <ErrorSummary message={cliniciansError ?? actionError} />
@@ -575,7 +573,7 @@ function CreateUnavailablePeriodPage() {
 
           <div className="nhsuk-form-group form-group">
             <label className="nhsuk-label" htmlFor="period-start">
-              Unavailable from
+              Clinician unavailable from
             </label>
             <input
               className="nhsuk-input"
@@ -590,7 +588,7 @@ function CreateUnavailablePeriodPage() {
 
           <div className="nhsuk-form-group form-group">
             <label className="nhsuk-label" htmlFor="period-end">
-              Unavailable until
+              Clinician unavailable until
             </label>
             <input
               className="nhsuk-input"
@@ -756,7 +754,7 @@ function StaffBookingsPage() {
       </Link>
       <PageIntroduction caption="Staff appointments" heading="Review bookings">
         <p className="nhsuk-body-l">
-          Filter bookings by clinician, appointment date and status.
+          Find bookings by clinician, appointment date or booking status.
         </p>
       </PageIntroduction>
       <ErrorSummary message={initialError} />
@@ -790,7 +788,7 @@ function StaffBookingsPage() {
               className="booking-filters"
               onSubmit={(event) => void applyFilters(event)}
             >
-              <div className="nhsuk-form-group form-group">
+              <div className="nhsuk-form-group form-group booking-filter-clinician">
                 <label className="nhsuk-label" htmlFor="filter-clinician">
                   Clinician
                 </label>
@@ -812,33 +810,45 @@ function StaffBookingsPage() {
                 </select>
               </div>
 
-              <div className="nhsuk-form-group form-group">
-                <label className="nhsuk-label" htmlFor="filter-from-date">
-                  From date
-                </label>
-                <input
-                  className="nhsuk-input"
-                  id="filter-from-date"
-                  type="date"
-                  value={fromDate}
-                  onChange={(event) => setFromDate(event.target.value)}
-                />
-              </div>
+              <fieldset className="date-filter-group">
+                <legend className="nhsuk-u-visually-hidden">
+                  Appointment dates
+                </legend>
+                <div className="date-filter-fields">
+                  <div className="nhsuk-form-group form-group">
+                    <label className="nhsuk-label" htmlFor="filter-from-date">
+                      From date
+                    </label>
+                    <input
+                      className="nhsuk-input"
+                      id="filter-from-date"
+                      type="date"
+                      aria-describedby="booking-date-filter-hint"
+                      value={fromDate}
+                      onChange={(event) => setFromDate(event.target.value)}
+                    />
+                  </div>
 
-              <div className="nhsuk-form-group form-group">
-                <label className="nhsuk-label" htmlFor="filter-to-date">
-                  To date
-                </label>
-                <input
-                  className="nhsuk-input"
-                  id="filter-to-date"
-                  type="date"
-                  value={toDate}
-                  onChange={(event) => setToDate(event.target.value)}
-                />
-              </div>
+                  <div className="nhsuk-form-group form-group">
+                    <label className="nhsuk-label" htmlFor="filter-to-date">
+                      To date
+                    </label>
+                    <input
+                      className="nhsuk-input"
+                      id="filter-to-date"
+                      type="date"
+                      aria-describedby="booking-date-filter-hint"
+                      value={toDate}
+                      onChange={(event) => setToDate(event.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="nhsuk-hint" id="booking-date-filter-hint">
+                  Leave both dates blank to show all appointment dates.
+                </div>
+              </fieldset>
 
-              <div className="nhsuk-form-group form-group">
+              <div className="nhsuk-form-group form-group booking-filter-status">
                 <label className="nhsuk-label" htmlFor="filter-status">
                   Status
                 </label>
@@ -849,7 +859,7 @@ function StaffBookingsPage() {
                   onChange={(event) => setStatus(event.target.value)}
                 >
                   <option value="">All statuses</option>
-                  <option value="Active">Active</option>
+                  <option value="Active">Confirmed</option>
                   <option value="Cancelled">Cancelled</option>
                 </select>
               </div>
@@ -911,7 +921,7 @@ function StaffBookingsPage() {
                               <span
                                 className={`nhsuk-tag status-badge status-${booking.status.toLowerCase()}`}
                               >
-                                {booking.status}
+                                {formatBookingStatus(booking.status)}
                               </span>
                             </td>
                           </tr>

@@ -42,7 +42,7 @@ test.describe('appointment scheduling journeys', () => {
     await patientBookingPage.confirmAppointment()
 
     await expect(patientBookingPage.confirmationAlert).toContainText(
-      'has been confirmed',
+      'is confirmed',
     )
     const bookingReference = await patientBookingPage.bookingReference()
     expect(bookingReference).toMatch(/^APT-[A-Z0-9]{8}$/)
@@ -88,8 +88,9 @@ test.describe('appointment scheduling journeys', () => {
     await expect(unavailablePeriodPage.confirmationHeading).toBeVisible()
 
     await patientBookingPage.gotoAppointments()
-    await expect(
-      patientBookingPage.appointmentsOn(formattedDate(appointmentDate)),
-    ).toHaveCount(1)
+    const appointments = await patientBookingPage.findAppointmentsOn(
+      formattedDate(appointmentDate),
+    )
+    await expect(appointments).toHaveCount(1)
   })
 })

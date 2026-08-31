@@ -14,6 +14,6 @@ public class AvailabilitySession
 
     public Clinician Clinician { get; set; } = null!;
 
-    public ICollection<AppointmentSlot> AppointmentSlots { get; set; }
+    public ICollection<AppointmentSlot> AppointmentSlots { get; }
         = new List<AppointmentSlot>();
 }

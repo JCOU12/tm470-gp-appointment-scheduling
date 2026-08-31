@@ -6,5 +6,5 @@ public class Patient
 
     public string DisplayName { get; set; } = string.Empty;
 
-    public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
+    public ICollection<Booking> Bookings { get; } = new List<Booking>();
 }

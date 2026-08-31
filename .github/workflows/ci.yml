@@ -56,14 +56,14 @@ jobs:
           dotnet test AppointmentScheduling.sln
           --configuration Release
           --no-build
-          --settings coverlet.runsettings
-          --collect:"XPlat Code Coverage"
           --results-directory artefacts/test-results
           --logger "trx;LogFileName=tests.trx"
-
-      - name: Enforce 80% line coverage
-        shell: pwsh
-        run: ./eng/Assert-CodeCoverage.ps1 -CoverageDirectory artefacts/test-results -MinimumLineCoverage 80
+          /p:CollectCoverage=true
+          /p:CoverletOutput=${{ github.workspace }}/artefacts/test-results/coverage
+          /p:CoverletOutputFormat=cobertura
+          /p:Threshold=80
+          /p:ThresholdType=line
+          /p:ThresholdStat=total
 
       - name: Retain test and coverage reports
         if: ${{ always() && hashFiles('artefacts/test-results/**') != '' }}

@@ -1,38 +1,39 @@
 ﻿# TM470 GP Appointment Scheduling Proof of Concept
 
-This repository contains the practical output for my TM470 Computing and IT project.
+This application allows patients to view, book and cancel GP appointments while surgery staff manage clinician availability and unavailable periods.
 
 ## Project aim
 
-The project designs, implements and evaluates a small proof-of-concept appointment scheduling system for general practice.
+The project implements a small proof-of-concept appointment scheduling system for general practice.
 
 It demonstrates how surgery staff-defined clinician availability can be translated into patient-facing appointment slots that can be viewed, booked and cancelled.
 
 The main technical concern is booking integrity, particularly preventing more than one active booking for the same appointment slot.
 
-## Planned functions
+## Implemented functions
 
 ### Patient functions
 
 - View available appointment slots
-- Book an available slot
-- View a booking
-- Cancel a booking
+- Review and book an available slot
+- Retrieve a booking using its public booking reference
+- Review and confirm a cancellation
 - Receive confirmation and error feedback
 
 ### Surgery staff functions
 
-- Create clinician availability sessions
+- Create clinician availability sessions and generate appointment slots
 - Block unavailable periods
-- View booking information
+- View and filter bookings by clinician, appointment date and status
 
 ## Technical stack
 
-- React and TypeScript frontend using the NHS.UK frontend design system library
-- ASP.NET Core Web API
-- Entity Framework Core
-- SQLite
-- xUnit automated tests
+- React, TypeScript and Vite frontend using NHS.UK Frontend
+- ASP.NET Core Web API with OpenAPI and Swagger UI
+- Entity Framework Core with SQLite
+- xUnit and Vitest automated tests
+- Playwright end-to-end tests with axe accessibility checks
+- GitHub Actions continuous integration with linting and test-coverage gates
 
 ## Project boundaries
 
@@ -40,16 +41,32 @@ The proof of concept:
 
 - uses synthetic data only;
 - does not use real patient or clinical data;
+- does not authenticate users or enforce role-based access;
 - does not connect to NHS systems;
 - does not provide clinical triage or medical advice;
 - does not use AI to prioritise patients;
 - is not intended as a production NHS system.
 
-## Current status
-
-The API currently supports clinician data, validated availability sessions, unavailable periods, generated appointment slots, transactional booking creation, public booking references, booking retrieval, cancellation and staff booking queries. The React interface presents patient and staff tasks as focused, route-based journeys with review or confirmation steps. Staff can create availability, add unavailable periods and filter booking records on separate pages. Its shared layout, forms, feedback and content components follow NHS.UK frontend patterns. The automated suites cover backend domain, persistence, controller and concurrency behaviour alongside patient and staff frontend workflows.
-
 ## Run locally
+
+### Prerequisites
+
+- .NET SDK 10.0.302 or a compatible later patch from the 10.0 feature band
+- Node.js 22.12 or later in the 22.x release line
+
+For a first-time setup, restore the pinned tools and locked dependencies,
+create the development database, and install the frontend dependencies:
+
+```powershell
+dotnet tool restore
+dotnet restore AppointmentScheduling.sln --locked-mode
+dotnet ef database update --project server/AppointmentScheduling.Api --startup-project server/AppointmentScheduling.Api
+cd client/AppointmentScheduling.Web
+npm ci
+cd ../..
+```
+
+### Start the application
 
 Start the API from the repository root:
 
@@ -57,11 +74,10 @@ Start the API from the repository root:
 dotnet run --project server/AppointmentScheduling.Api --launch-profile http
 ```
 
-In a second terminal, install and start the client:
+In a second terminal, start the client:
 
 ```powershell
 cd client/AppointmentScheduling.Web
-npm install
 npm run dev
 ```
 
@@ -91,78 +107,42 @@ This removes the existing data, recreates the database from the migrations and r
 
 ## Quality checks
 
-Pull requests and changes to `main` must pass the GitHub Actions CI workflow. It verifies locked dependency restoration, formatting and built-in .NET analyser rules, a warning-free Release build, all automated tests, and at least 80% application line coverage.
+GitHub Actions checks pull requests and changes to `main` for locked dependencies, formatting, analyser warnings, npm vulnerabilities, linting, Release builds, automated tests and at least 80% backend and frontend coverage. It also runs the Playwright journeys across Chromium, Firefox and WebKit.
 
-The frontend CI job installs locked npm dependencies, audits production dependencies, runs ESLint, creates a production build and requires at least 80% statement, branch, function and line coverage. After the backend and frontend quality jobs pass, Playwright runs the principal patient and staff journeys in Chromium against the real API and a disposable SQLite database.
+### Available local checks
 
-Run the equivalent checks locally with:
+Run the backend tests from the repository root:
 
 ```powershell
-dotnet tool restore
-dotnet restore AppointmentScheduling.sln --locked-mode
-dotnet format AppointmentScheduling.sln --verify-no-changes --no-restore --severity warn --exclude server/AppointmentScheduling.Api/Data/Migrations
-dotnet build AppointmentScheduling.sln --configuration Release --no-restore --warnaserror
-dotnet test AppointmentScheduling.sln --configuration Release --no-build --settings coverlet.runsettings --collect:"XPlat Code Coverage" --results-directory artefacts/test-results
-powershell -NoProfile -ExecutionPolicy Bypass -File ./eng/Assert-CodeCoverage.ps1 -CoverageDirectory artefacts/test-results -MinimumLineCoverage 80
+dotnet test AppointmentScheduling.sln
 ```
 
-From the repository root, change into the directory that contains the frontend `package.json`, then run the frontend checks:
+Run the frontend checks from its project directory:
 
 ```powershell
 cd client/AppointmentScheduling.Web
-npm ci
-npm audit --audit-level=high
 npm run lint
 npm run build
+npm run test
 npm run test:coverage
 ```
 
-The preceding `dotnet tool restore` command installs the repository's pinned EF Core command-line tool, which Playwright uses to prepare its database. Run the end-to-end tests from `client/AppointmentScheduling.Web` in the normal headless mode with:
-
-```powershell
-npx playwright install chromium
-npm run test:e2e
-```
-
-To watch the tests run in a visible browser, use headed mode:
-
-```powershell
-npm run test:e2e:headed
-```
-
-For Playwright's interactive test runner, use UI mode:
-
-```powershell
-npm run test:e2e:ui
-```
-
-Run the keyboard journey and automated WCAG A and AA checks independently
-with:
-
-```powershell
-npm run test:e2e:accessibility
-```
-
-Run the responsive patient and staff journeys in the emulated mobile project
-with:
-
-```powershell
-npm run test:e2e:responsive
-```
-
-Run the desktop reflow checks at a 320 CSS-pixel viewport, including pages
-with validation feedback and a conventional browser scrollbar, with:
-
-```powershell
-npm run test:e2e:reflow
-```
-
-Install all three browser engines and run the principal compatibility journey
-with:
+Install the supported Playwright browsers once:
 
 ```powershell
 npx playwright install chromium firefox webkit
-npm run test:e2e:browsers
 ```
 
-The end-to-end configuration starts the API and client on dedicated test ports, uses a separate `E2E` .NET build configuration and resets only `appointment-scheduling-e2e.db`. It therefore does not interfere with a development server or change the normal development database. The suite uses page objects and custom Playwright fixtures to keep user-facing locators and reusable page actions separate from the journey assertions. Axe checks identify automatically detectable issues, while the keyboard journey verifies that a patient can complete the principal booking and cancellation flow without a pointing device. The mobile Chromium project emulates touch input at a 320 CSS-pixel viewport and verifies the principal patient and staff journeys without page-level horizontal overflow. A separate desktop reflow project checks validation states at the same narrow width with conventional scrollbars. The principal staff-to-patient journey also runs through the Chromium, Firefox and WebKit browser engines. These checks complement rather than replace developer-led accessibility and usability evaluation, assistive-technology checks and evaluation with representative users.
+Run Playwright commands from `client/AppointmentScheduling.Web`:
+
+| Command | Purpose |
+| --- | --- |
+| `npm run test:e2e` | Run the complete suite headlessly |
+| `npm run test:e2e:headed` | Run the suite in visible browsers |
+| `npm run test:e2e:ui` | Open Playwright's interactive test runner |
+| `npm run test:e2e:accessibility` | Run keyboard and automated accessibility checks |
+| `npm run test:e2e:responsive` | Run the mobile patient and staff journeys |
+| `npm run test:e2e:reflow` | Check desktop reflow at 320 CSS pixels |
+| `npm run test:e2e:browsers` | Run the compatibility journey in all supported browsers |
+
+Playwright uses dedicated test ports and a disposable SQLite database, leaving the development database unchanged.

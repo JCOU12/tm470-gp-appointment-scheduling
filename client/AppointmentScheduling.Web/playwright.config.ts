@@ -18,8 +18,6 @@ export default defineConfig({
     locale: 'en-GB',
     timezoneId: 'Europe/London',
     trace: process.env.CI ? 'on-first-retry' : 'retain-on-failure',
-    screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
   },
   projects: [
     {

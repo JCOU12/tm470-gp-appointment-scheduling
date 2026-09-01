@@ -17,7 +17,7 @@ test.describe('responsive appointment journeys', () => {
     patientBookingPage,
     schedulingApi,
   }, testInfo) => {
-    const appointmentDate = futureDate(14 + testInfo.retry * 10)
+    const appointmentDate = futureDate(14 + testInfo.retry * 30)
     const availability = await schedulingApi.createAvailability({
       clinicianId: 1,
       date: appointmentDate,
@@ -35,6 +35,7 @@ test.describe('responsive appointment journeys', () => {
 
     await patientBookingPage.startBooking()
     await expect(patientBookingPage.selectionHeading).toBeVisible()
+    await patientBookingPage.showAppointment(appointmentName)
     await expectMinimumTouchTarget(
       patientBookingPage.appointmentOption(appointmentName),
     )
@@ -78,7 +79,7 @@ test.describe('responsive appointment journeys', () => {
     staffBookingsPage,
     staffHomePage,
   }, testInfo) => {
-    const appointmentDate = futureDate(15 + testInfo.retry * 10)
+    const appointmentDate = futureDate(15 + testInfo.retry * 30)
 
     await staffHomePage.goto()
     await expect(staffHomePage.heading).toBeVisible()

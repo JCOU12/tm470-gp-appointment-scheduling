@@ -202,7 +202,8 @@ public sealed class StaffBookingsControllerTests
         ActionResult<IReadOnlyList<StaffBookingResponse>> result,
         string expectedDetail)
     {
-        var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+        var badRequest = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(StatusCodes.Status400BadRequest, badRequest.StatusCode);
         var problem = Assert.IsType<ProblemDetails>(badRequest.Value);
         Assert.Equal(StatusCodes.Status400BadRequest, problem.Status);
         Assert.Contains(expectedDetail, problem.Detail);

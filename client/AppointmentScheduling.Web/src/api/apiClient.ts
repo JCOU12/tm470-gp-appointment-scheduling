@@ -13,7 +13,9 @@ export class ApiError extends Error {
   }
 }
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? ''
+const configuredApiBaseUrl: unknown = import.meta.env.VITE_API_BASE_URL
+const apiBaseUrl =
+  typeof configuredApiBaseUrl === 'string' ? configuredApiBaseUrl : ''
 
 export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${apiBaseUrl}${path}`, {

@@ -35,6 +35,7 @@ public sealed class BookingPersistenceTests
 
         Assert.Equal(BookingStatus.Active, booking.Status);
         Assert.Equal(bookedAtUtc, booking.BookedAtUtc);
+        Assert.Equal(DateTimeKind.Utc, booking.BookedAtUtc.Kind);
         Assert.Null(booking.CancelledAtUtc);
         Assert.Equal(slot.AppointmentSlotId, booking.AppointmentSlotId);
         Assert.Equal("APT-2BCDEFGH", booking.Reference);
@@ -162,12 +163,21 @@ public sealed class BookingPersistenceTests
                 CreatePatient("Sam")));
 
         await dbContext.SaveChangesAsync();
+        dbContext.ChangeTracker.Clear();
+
+        var cancelledBooking = await dbContext.Bookings
+            .AsNoTracking()
+            .SingleAsync(booking => booking.Status == BookingStatus.Cancelled);
 
         Assert.Equal(2, await dbContext.Bookings.CountAsync());
         Assert.Equal(
             1,
             await dbContext.Bookings.CountAsync(
                 booking => booking.Status == BookingStatus.Active));
+        Assert.NotNull(cancelledBooking.CancelledAtUtc);
+        Assert.Equal(
+            DateTimeKind.Utc,
+            cancelledBooking.CancelledAtUtc.Value.Kind);
     }
 
     [Fact]

@@ -11,7 +11,7 @@ describe('application routes', () => {
     vi.unstubAllGlobals()
   })
 
-  it('shows the patient workflow at the root path', async () => {
+  it('shows the patient workflow at the root path', () => {
     render(
       <MemoryRouter initialEntries={['/']}>
         <RootApp />

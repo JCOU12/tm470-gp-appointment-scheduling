@@ -27,6 +27,8 @@ public sealed class UnavailablePeriodPersistenceTests
         Assert.Equal("Dr Maya Patel", persistedPeriod.Clinician.Name);
         Assert.Equal(period.StartsAtUtc, persistedPeriod.StartsAtUtc);
         Assert.Equal(period.EndsAtUtc, persistedPeriod.EndsAtUtc);
+        Assert.Equal(DateTimeKind.Utc, persistedPeriod.StartsAtUtc.Kind);
+        Assert.Equal(DateTimeKind.Utc, persistedPeriod.EndsAtUtc.Kind);
     }
 
     [Fact]

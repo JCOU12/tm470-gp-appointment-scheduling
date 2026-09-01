@@ -12,7 +12,7 @@ test.describe('320 pixel desktop reflow', () => {
     await availabilityPage.submit()
 
     await expect(page.getByRole('alert')).toBeVisible()
-    await expect(page.locator('.nhsuk-error-summary')).toBeFocused()
+    await expect(page.locator('.nhsuk-error-summary')).not.toBeFocused()
     await expectPageToFitViewport(page)
   })
 
@@ -25,7 +25,7 @@ test.describe('320 pixel desktop reflow', () => {
     await page.getByRole('button', { name: 'Find booking' }).click()
 
     await expect(bookingManagementPage.statusAlert).toBeVisible()
-    await expect(page.locator('.nhsuk-error-summary')).toBeFocused()
+    await expect(page.locator('.nhsuk-error-summary')).not.toBeFocused()
     await expectPageToFitViewport(page)
   })
 })

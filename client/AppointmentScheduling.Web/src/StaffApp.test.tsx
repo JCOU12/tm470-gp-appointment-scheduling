@@ -68,6 +68,11 @@ describe('staff appointment workflow', () => {
       screen.getByRole('heading', { name: /manage appointment scheduling/i }),
     ).toBeInTheDocument()
     expect(
+      screen.getByText(
+        'Manage when clinicians can see patients or review patient bookings.',
+      ),
+    ).toBeInTheDocument()
+    expect(
       screen.getByRole('link', { name: /create availability/i }),
     ).toBeInTheDocument()
     expect(
@@ -180,8 +185,14 @@ describe('staff appointment workflow', () => {
     await screen.findByRole('heading', { name: /add unavailable time/i })
 
     await user.selectOptions(screen.getByLabelText('Clinician'), '1')
-    await user.type(screen.getByLabelText('Unavailable from'), '2026-08-20T12:00')
-    await user.type(screen.getByLabelText('Unavailable until'), '2026-08-20T13:00')
+    await user.type(
+      screen.getByLabelText('Clinician unavailable from'),
+      '2026-08-20T12:00',
+    )
+    await user.type(
+      screen.getByLabelText('Clinician unavailable until'),
+      '2026-08-20T13:00',
+    )
     await user.click(
       screen.getByRole('button', { name: /add unavailable time/i }),
     )
@@ -216,6 +227,12 @@ describe('staff appointment workflow', () => {
     expect(filters).not.toBeNull()
     const filterForm = within(filters!)
 
+    expect(
+      filterForm.getByText(
+        'Leave both dates blank to show all appointment dates.',
+      ),
+    ).toBeInTheDocument()
+
     await user.selectOptions(filterForm.getByLabelText('Clinician'), '1')
     await user.type(filterForm.getByLabelText('From date'), '2026-08-20')
     await user.type(filterForm.getByLabelText('To date'), '2026-08-20')
@@ -229,19 +246,19 @@ describe('staff appointment workflow', () => {
       toUtc: new Date('2026-08-21T00:00').toISOString(),
       status: 'Cancelled',
     })
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      3,
+    expect(fetchMock.mock.calls[2]?.[0]).toBe(
       `/api/staff/bookings?${expectedQuery.toString()}`,
-      expect.objectContaining({ headers: expect.any(Object) }),
     )
+    expect(fetchMock.mock.calls[2]?.[1]?.headers).toMatchObject({
+      Accept: 'application/json',
+    })
 
     await user.click(screen.getByRole('button', { name: /clear filters/i }))
     expect(await screen.findByText('1 booking found')).toBeInTheDocument()
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      4,
-      '/api/staff/bookings',
-      expect.objectContaining({ headers: expect.any(Object) }),
-    )
+    expect(fetchMock.mock.calls[3]?.[0]).toBe('/api/staff/bookings')
+    expect(fetchMock.mock.calls[3]?.[1]?.headers).toMatchObject({
+      Accept: 'application/json',
+    })
   })
 
   it('shows scheduling conflicts returned by the API', async () => {

@@ -70,7 +70,8 @@ public sealed class StaffAvailabilitySessionsControllerTests
 
         var response = await controller.Create(request, CancellationToken.None);
 
-        var badRequest = Assert.IsType<BadRequestObjectResult>(response.Result);
+        var badRequest = Assert.IsType<ObjectResult>(response.Result);
+        Assert.Equal(StatusCodes.Status400BadRequest, badRequest.StatusCode);
         var problem = Assert.IsType<ProblemDetails>(badRequest.Value);
         Assert.Equal(StatusCodes.Status400BadRequest, problem.Status);
         Assert.Contains("end after it starts", problem.Detail);
@@ -91,7 +92,8 @@ public sealed class StaffAvailabilitySessionsControllerTests
 
         var response = await controller.Create(request, CancellationToken.None);
 
-        var badRequest = Assert.IsType<BadRequestObjectResult>(response.Result);
+        var badRequest = Assert.IsType<ObjectResult>(response.Result);
+        Assert.Equal(StatusCodes.Status400BadRequest, badRequest.StatusCode);
         var problem = Assert.IsType<ProblemDetails>(badRequest.Value);
         Assert.Equal(StatusCodes.Status400BadRequest, problem.Status);
         Assert.Contains("inactive", problem.Detail);
@@ -118,7 +120,8 @@ public sealed class StaffAvailabilitySessionsControllerTests
             CreateValidRequest(),
             CancellationToken.None);
 
-        var conflict = Assert.IsType<ConflictObjectResult>(response.Result);
+        var conflict = Assert.IsType<ObjectResult>(response.Result);
+        Assert.Equal(StatusCodes.Status409Conflict, conflict.StatusCode);
         var problem = Assert.IsType<ProblemDetails>(conflict.Value);
         Assert.Equal(StatusCodes.Status409Conflict, problem.Status);
         Assert.Contains("overlaps", problem.Detail);

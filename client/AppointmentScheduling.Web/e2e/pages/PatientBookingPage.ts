@@ -33,10 +33,10 @@ export class PatientBookingPage {
     })
     this.continueButton = page.getByRole('button', { name: 'Continue' })
     this.detailsHeading = page.getByRole('heading', {
-      name: 'Enter patient details',
+      name: 'Enter your name',
     })
     this.mainContent = page.getByRole('main')
-    this.patientNameInput = page.getByLabel('Patient name')
+    this.patientNameInput = page.getByRole('textbox', { name: 'Patient name' })
     this.patientTaskCards = page.locator('.journey-card-grid .nhsuk-card')
     this.reviewHeading = page.getByRole('heading', {
       name: 'Check your appointment details',
@@ -60,8 +60,61 @@ export class PatientBookingPage {
   }
 
   async chooseAppointment(accessibleName: RegExp) {
-    await this.appointment(accessibleName).check()
+    const appointment = await this.showAppointment(accessibleName)
+    await appointment.check()
     await this.continueButton.click()
+  }
+
+  async showAppointment(accessibleName: RegExp, useKeyboard = false) {
+    const appointment = this.appointment(accessibleName)
+    await this.waitForAppointmentResults()
+
+    while ((await appointment.count()) === 0) {
+      const nextPage = this.page.getByRole('button', {
+        name: 'Next',
+        exact: true,
+      })
+
+      if (!(await nextPage.isVisible())) {
+        break
+      }
+
+      if (useKeyboard) {
+        await nextPage.focus()
+        await this.page.keyboard.press('Enter')
+      } else {
+        await nextPage.click()
+      }
+    }
+
+    return appointment
+  }
+
+  async findAppointmentsOn(formattedDate: string) {
+    const appointments = this.appointmentsOn(formattedDate)
+    await this.waitForAppointmentResults()
+
+    while ((await appointments.count()) === 0) {
+      const nextPage = this.page.getByRole('button', {
+        name: 'Next',
+        exact: true,
+      })
+
+      if (!(await nextPage.isVisible())) {
+        break
+      }
+
+      await nextPage.click()
+    }
+
+    return appointments
+  }
+
+  private async waitForAppointmentResults() {
+    await this.page
+      .locator('.slot-fieldset, .empty-message, .inline-error')
+      .first()
+      .waitFor({ state: 'visible' })
   }
 
   async enterPatientName(patientName: string) {

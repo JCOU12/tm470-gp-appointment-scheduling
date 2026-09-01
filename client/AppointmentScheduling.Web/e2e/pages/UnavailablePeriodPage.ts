@@ -31,10 +31,10 @@ export class UnavailablePeriodPage {
       .getByRole('combobox', { name: 'Clinician', exact: true })
       .selectOption(details.clinicianId)
     await this.page
-      .getByLabel('Unavailable from')
+      .getByLabel('Clinician unavailable from')
       .fill(`${details.date}T${details.startsAt}`)
     await this.page
-      .getByLabel('Unavailable until')
+      .getByLabel('Clinician unavailable until')
       .fill(`${details.date}T${details.endsAt}`)
     await this.page
       .getByRole('button', { name: 'Add unavailable time' })

@@ -10,7 +10,7 @@ test.describe('staff booking journeys', () => {
     schedulingApi,
     staffBookingsPage,
   }, testInfo) => {
-    const appointmentDate = futureDate(11 + testInfo.retry * 10)
+    const appointmentDate = futureDate(11 + testInfo.retry * 30)
     const availability = await schedulingApi.createAvailability({
       clinicianId: 1,
       date: appointmentDate,
@@ -42,6 +42,6 @@ test.describe('staff booking journeys', () => {
     const bookingRow = staffBookingsPage.bookingRow(bookingReference)
     await expect(bookingRow).toContainText('Jamie Taylor')
     await expect(bookingRow).toContainText('Dr Maya Patel')
-    await expect(bookingRow).toContainText('Active')
+    await expect(bookingRow).toContainText('Confirmed')
   })
 })

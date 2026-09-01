@@ -21,6 +21,6 @@ public sealed class BookingReferenceGenerator
     {
         return reference.Length == Prefix.Length + RandomCharacterCount
             && reference.StartsWith(Prefix, StringComparison.Ordinal)
-            && reference[Prefix.Length..].All(char.IsAsciiLetterOrDigit);
+            && reference[Prefix.Length..].All(Alphabet.Contains);
     }
 }

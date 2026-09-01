@@ -15,7 +15,7 @@ test.describe('accessible appointment journeys', () => {
     patientBookingPage,
     schedulingApi,
   }, testInfo) => {
-    const appointmentDate = futureDate(12 + testInfo.retry * 10)
+    const appointmentDate = futureDate(12 + testInfo.retry * 30)
     const availability = await schedulingApi.createAvailability({
       clinicianId: 1,
       date: appointmentDate,
@@ -44,7 +44,10 @@ test.describe('accessible appointment journeys', () => {
     await expect(patientBookingPage.selectionHeading).toBeVisible()
     await expect(patientBookingPage.mainContent).toBeFocused()
 
-    const appointment = patientBookingPage.appointment(appointmentName)
+    const appointment = await patientBookingPage.showAppointment(
+      appointmentName,
+      true,
+    )
     await tabTo(page, appointment)
     await page.keyboard.press('Space')
     await expect(appointment).toBeChecked()
@@ -80,7 +83,7 @@ test.describe('accessible appointment journeys', () => {
     patientBookingPage,
     schedulingApi,
   }, testInfo) => {
-    const appointmentDate = futureDate(13 + testInfo.retry * 10)
+    const appointmentDate = futureDate(13 + testInfo.retry * 30)
     const availability = await schedulingApi.createAvailability({
       clinicianId: 1,
       date: appointmentDate,

@@ -164,13 +164,9 @@ public sealed class BookingsController : ControllerBase
         string detail,
         int statusCode)
     {
-        return StatusCode(
-            statusCode,
-            new ProblemDetails
-            {
-                Title = title,
-                Detail = detail,
-                Status = statusCode
-            });
+        return Problem(
+            title: title,
+            detail: detail,
+            statusCode: statusCode);
     }
 }

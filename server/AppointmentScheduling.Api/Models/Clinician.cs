@@ -10,9 +10,9 @@ public class Clinician
 
     public bool IsActive { get; set; } = true;
 
-    public ICollection<AvailabilitySession> AvailabilitySessions { get; set; }
+    public ICollection<AvailabilitySession> AvailabilitySessions { get; }
         = new List<AvailabilitySession>();
 
-    public ICollection<UnavailablePeriod> UnavailablePeriods { get; set; }
+    public ICollection<UnavailablePeriod> UnavailablePeriods { get; }
         = new List<UnavailablePeriod>();
 }

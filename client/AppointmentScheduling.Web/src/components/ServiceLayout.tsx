@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Link } from 'react-router'
 import { focusMainContent } from '../focusMainContent'
 
 interface ServiceLayoutProps {
@@ -21,9 +22,9 @@ export function ServiceLayout({ activeArea, children }: ServiceLayoutProps) {
       <header className="nhsuk-header" role="banner">
         <div className="nhsuk-header__container nhsuk-width-container">
           <div className="nhsuk-header__service">
-            <a className="nhsuk-header__service-name" href="/">
+            <Link className="nhsuk-header__service-name" to="/">
               Oakfield Medical Centre
-            </a>
+            </Link>
             <span className="service-description">Appointment service</span>
           </div>
         </div>
@@ -40,9 +41,9 @@ export function ServiceLayout({ activeArea, children }: ServiceLayoutProps) {
                     : ''
                 }`}
               >
-                <a
+                <Link
                   className="nhsuk-header__navigation-link"
-                  href="/"
+                  to="/"
                   aria-current={activeArea === 'patient' ? 'page' : undefined}
                 >
                   {activeArea === 'patient' ? (
@@ -52,7 +53,7 @@ export function ServiceLayout({ activeArea, children }: ServiceLayoutProps) {
                   ) : (
                     'Patient appointments'
                   )}
-                </a>
+                </Link>
               </li>
               <li
                 className={`nhsuk-header__navigation-item${
@@ -61,9 +62,9 @@ export function ServiceLayout({ activeArea, children }: ServiceLayoutProps) {
                     : ''
                 }`}
               >
-                <a
+                <Link
                   className="nhsuk-header__navigation-link"
-                  href="/staff"
+                  to="/staff"
                   aria-current={activeArea === 'staff' ? 'page' : undefined}
                 >
                   {activeArea === 'staff' ? (
@@ -73,7 +74,7 @@ export function ServiceLayout({ activeArea, children }: ServiceLayoutProps) {
                   ) : (
                     'Staff scheduling'
                   )}
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

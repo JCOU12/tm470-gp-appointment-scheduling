@@ -59,7 +59,7 @@ async function reachReviewPage() {
   await user.click(screen.getByRole('button', { name: /continue/i }))
 
   expect(
-    screen.getByRole('heading', { name: /enter patient details/i }),
+    screen.getByRole('heading', { name: /enter your name/i }),
   ).toBeInTheDocument()
   await user.type(
     screen.getByRole('textbox', { name: /^patient name$/i }),
@@ -116,8 +116,11 @@ describe('patient appointment journey', () => {
       await screen.findByRole('heading', { name: /appointment confirmed/i }),
     ).toBeInTheDocument()
     expect(
-      screen.getByText('Booking APT-7K4M9Q2R has been confirmed.'),
+      screen.getByText(
+        'Your appointment is confirmed. Make a note of your booking reference: APT-7K4M9Q2R.',
+      ),
     ).toBeInTheDocument()
+    expect(screen.getByText('Confirmed')).toBeInTheDocument()
     expect(screen.getByRole('alert')).toHaveClass(
       'nhsuk-notification-banner--success',
     )
@@ -224,7 +227,42 @@ describe('patient appointment journey', () => {
     expect(
       screen.getByText(/enter a booking reference in the format APT-/i),
     ).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: /please check and try again/i }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('alert')).not.toHaveFocus()
     expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('paginates long appointment lists and preserves the selection', async () => {
+    const availableSlots = Array.from({ length: 7 }, (_, index) => ({
+      ...availableSlot,
+      appointmentSlotId: index + 1,
+      clinicianName: `Clinician ${index + 1}`,
+      startsAtUtc: `2026-08-27T${String(9 + index).padStart(2, '0')}:00:00Z`,
+      endsAtUtc: `2026-08-27T${String(9 + index).padStart(2, '0')}:20:00Z`,
+    }))
+    fetchMock.mockResolvedValueOnce(jsonResponse(availableSlots))
+    renderApp('/appointments')
+    const user = userEvent.setup()
+
+    expect(await screen.findAllByRole('radio')).toHaveLength(6)
+    expect(screen.queryByRole('radio', { name: /Clinician 7/i })).toBeNull()
+
+    await user.click(screen.getByRole('button', { name: 'Page 2' }))
+    const finalAppointment = screen.getByRole('radio', {
+      name: /Clinician 7/i,
+    })
+    await user.click(finalAppointment)
+    expect(finalAppointment).toBeChecked()
+
+    await user.click(screen.getByRole('button', { name: /previous/i }))
+    expect(screen.queryByRole('radio', { name: /Clinician 7/i })).toBeNull()
+
+    await user.click(screen.getByRole('button', { name: 'Page 2' }))
+    expect(
+      screen.getByRole('radio', { name: /Clinician 7/i }),
+    ).toBeChecked()
   })
 
   it('allows availability loading to be retried after an API error', async () => {

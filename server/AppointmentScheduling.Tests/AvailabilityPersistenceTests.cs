@@ -40,11 +40,15 @@ public sealed class AvailabilityPersistenceTests
         Assert.Equal(1, persistedSession.ClinicianId);
         Assert.Equal("Dr Maya Patel", persistedSession.Clinician.Name);
         Assert.Equal(10, persistedSession.SlotDurationMinutes);
+        Assert.Equal(DateTimeKind.Utc, persistedSession.StartsAtUtc.Kind);
+        Assert.Equal(DateTimeKind.Utc, persistedSession.EndsAtUtc.Kind);
 
         Assert.Collection(
             persistedSession.AppointmentSlots.OrderBy(slot => slot.StartsAtUtc),
             slot =>
             {
+                Assert.Equal(DateTimeKind.Utc, slot.StartsAtUtc.Kind);
+                Assert.Equal(DateTimeKind.Utc, slot.EndsAtUtc.Kind);
                 Assert.Equal(
                     new DateTime(2026, 8, 17, 9, 0, 0, DateTimeKind.Utc),
                     slot.StartsAtUtc);
@@ -54,6 +58,8 @@ public sealed class AvailabilityPersistenceTests
             },
             slot =>
             {
+                Assert.Equal(DateTimeKind.Utc, slot.StartsAtUtc.Kind);
+                Assert.Equal(DateTimeKind.Utc, slot.EndsAtUtc.Kind);
                 Assert.Equal(
                     new DateTime(2026, 8, 17, 9, 10, 0, DateTimeKind.Utc),
                     slot.StartsAtUtc);

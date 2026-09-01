@@ -24,6 +24,7 @@ import { ServiceLayout } from './components/ServiceLayout'
 import { SuccessMessage } from './components/SuccessMessage'
 import { focusMainContent } from './focusMainContent'
 import { formatAppointmentDateTime } from './formatDateTime'
+import { formatBookingStatus } from './formatBookingStatus'
 import './App.css'
 
 interface BookingDraft {
@@ -40,6 +41,10 @@ const emptyDraft: BookingDraft = {
   selectedSlot: null,
   patientDisplayName: '',
 }
+
+const bookingReferencePattern = /^APT-[2-9A-HJ-NP-Z]{8}$/
+const bookingReferenceFormatMessage =
+  'Enter a booking reference in the format APT- followed by 8 letters or numbers, excluding 0, 1, I and O.'
 
 function errorMessage(error: unknown): string {
   if (error instanceof ApiError) {
@@ -110,8 +115,10 @@ function BookingSummary({ booking }: { booking: Booking }) {
         </dd>
       </div>
       <div className="nhsuk-summary-list__row">
-        <dt className="nhsuk-summary-list__key">Status</dt>
-        <dd className="nhsuk-summary-list__value">{booking.status}</dd>
+        <dt className="nhsuk-summary-list__key">Appointment status</dt>
+        <dd className="nhsuk-summary-list__value">
+          {formatBookingStatus(booking.status)}
+        </dd>
       </div>
     </dl>
   )
@@ -138,8 +145,7 @@ function PatientStartPage() {
               </Link>
             </h2>
             <p className="nhsuk-card__description">
-              Choose an available appointment and receive immediate
-              confirmation.
+              Choose an available appointment.
             </p>
           </div>
         </article>
@@ -152,8 +158,7 @@ function PatientStartPage() {
               </Link>
             </h2>
             <p className="nhsuk-card__description">
-              Use your booking reference to check appointment details or
-              cancel.
+              Check appointment details or cancel.
             </p>
           </div>
         </article>
@@ -232,7 +237,7 @@ function AppointmentSelectionPage({
       return
     }
 
-    navigate('/appointments/details')
+    void navigate('/appointments/details')
   }
 
   return (
@@ -287,7 +292,7 @@ function PatientDetailsPage({
     event.preventDefault()
 
     if (draft.patientDisplayName.trim().length === 0) {
-      setFormError('Enter the patient name.')
+      setFormError('Enter your name.')
       return
     }
 
@@ -295,7 +300,7 @@ function PatientDetailsPage({
       ...current,
       patientDisplayName: current.patientDisplayName.trim(),
     }))
-    navigate('/appointments/review')
+    void navigate('/appointments/review')
   }
 
   return (
@@ -305,10 +310,10 @@ function PatientDetailsPage({
       </Link>
       <PageIntroduction
         caption="Book an appointment"
-        heading="Enter patient details"
+        heading="Enter your name"
       >
         <p className="nhsuk-body-l">
-          Enter the details associated with this booking.
+          Enter your name for this appointment.
         </p>
       </PageIntroduction>
       <ErrorSummary message={formError} />
@@ -374,7 +379,7 @@ function ReviewAppointmentPage({ draft }: { draft: BookingDraft }) {
         appointmentSlotId: draft.selectedSlot.appointmentSlotId,
         patientDisplayName: draft.patientDisplayName,
       })
-      navigate(`/appointments/confirmation/${booking.bookingReference}`, {
+      void navigate(`/appointments/confirmation/${booking.bookingReference}`, {
         replace: true,
         state: { booking } satisfies RouteState,
       })
@@ -382,7 +387,7 @@ function ReviewAppointmentPage({ draft }: { draft: BookingDraft }) {
       const message = errorMessage(error)
 
       if (error instanceof ApiError && error.status === 409) {
-        navigate('/appointments', {
+        void navigate('/appointments', {
           replace: true,
           state: { error: message } satisfies RouteState,
         })
@@ -427,13 +432,13 @@ function ReviewAppointmentPage({ draft }: { draft: BookingDraft }) {
           </dd>
         </div>
         <div className="nhsuk-summary-list__row">
-          <dt className="nhsuk-summary-list__key">Patient name</dt>
+          <dt className="nhsuk-summary-list__key">Name</dt>
           <dd className="nhsuk-summary-list__value">
             {draft.patientDisplayName}
           </dd>
           <dd className="nhsuk-summary-list__actions">
             <Link to="/appointments/details">
-              Change<span className="nhsuk-u-visually-hidden"> patient name</span>
+              Change<span className="nhsuk-u-visually-hidden"> name</span>
             </Link>
           </dd>
         </div>
@@ -461,7 +466,7 @@ function useRouteBooking() {
     stateBooking?.bookingReference === normalisedBookingReference
       ? stateBooking
       : null
-  const isValidBookingReference = /^APT-[A-Z0-9]{8}$/.test(
+  const isValidBookingReference = bookingReferencePattern.test(
     normalisedBookingReference,
   )
   const [bookingResult, setBookingResult] = useState<{
@@ -513,7 +518,7 @@ function useRouteBooking() {
       : null
   const booking = matchingStateBooking ?? loadedBooking
   const error = !isValidBookingReference
-    ? 'Enter a booking reference in the format APT- followed by 8 letters or numbers.'
+    ? bookingReferenceFormatMessage
     : errorResult?.bookingReference === normalisedBookingReference
       ? errorResult.message
       : null
@@ -542,7 +547,7 @@ function BookingConfirmationPage({ resetDraft }: { resetDraft: () => void }) {
         message={
           booking === null
             ? null
-            : `Booking ${booking.bookingReference} has been confirmed.`
+            : `Your appointment is confirmed. Make a note of your booking reference: ${booking.bookingReference}.`
         }
       />
       <ErrorSummary message={error} />
@@ -552,11 +557,11 @@ function BookingConfirmationPage({ resetDraft }: { resetDraft: () => void }) {
           booking={booking}
           isCancelling={false}
           isConfirmingCancellation={false}
-          onStartCancellation={() =>
-            navigate(`/bookings/${normalisedBookingReference}/cancel`, {
+          onStartCancellation={() => {
+            void navigate(`/bookings/${normalisedBookingReference}/cancel`, {
               state: { booking } satisfies RouteState,
             })
-          }
+          }}
           onKeepBooking={() => undefined}
           onConfirmCancellation={() => undefined}
         />
@@ -578,14 +583,12 @@ function BookingLookupPage() {
     event.preventDefault()
     const normalisedReference = bookingReference.trim().toUpperCase()
 
-    if (!/^APT-[A-Z0-9]{8}$/.test(normalisedReference)) {
-      setValidationError(
-        'Enter a booking reference in the format APT- followed by 8 letters or numbers.',
-      )
+    if (!bookingReferencePattern.test(normalisedReference)) {
+      setValidationError(bookingReferenceFormatMessage)
       return
     }
 
-    navigate(`/bookings/${normalisedReference}`)
+    void navigate(`/bookings/${normalisedReference}`)
   }
 
   return (
@@ -652,11 +655,11 @@ function BookingDetailsPage() {
           booking={booking}
           isCancelling={false}
           isConfirmingCancellation={false}
-          onStartCancellation={() =>
-            navigate(`/bookings/${normalisedBookingReference}/cancel`, {
+          onStartCancellation={() => {
+            void navigate(`/bookings/${normalisedBookingReference}/cancel`, {
               state: { booking } satisfies RouteState,
             })
-          }
+          }}
           onKeepBooking={() => undefined}
           onConfirmCancellation={() => undefined}
         />
@@ -682,7 +685,7 @@ function CancelBookingPage() {
 
     try {
       const cancelledBooking = await cancelBooking(booking.bookingReference)
-      navigate(`/bookings/${booking.bookingReference}/cancelled`, {
+      void navigate(`/bookings/${booking.bookingReference}/cancelled`, {
         replace: true,
         state: { booking: cancelledBooking } satisfies RouteState,
       })

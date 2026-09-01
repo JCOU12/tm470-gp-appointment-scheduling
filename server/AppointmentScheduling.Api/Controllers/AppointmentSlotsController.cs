@@ -42,13 +42,10 @@ public sealed class AppointmentSlotsController : ControllerBase
         }
         catch (AvailableSlotsQueryValidationException exception)
         {
-            return BadRequest(
-                new ProblemDetails
-                {
-                    Title = "Invalid available-slots query",
-                    Detail = exception.Message,
-                    Status = StatusCodes.Status400BadRequest
-                });
+            return Problem(
+                title: "Invalid available-slots query",
+                detail: exception.Message,
+                statusCode: StatusCodes.Status400BadRequest);
         }
 
         var response = availableSlots

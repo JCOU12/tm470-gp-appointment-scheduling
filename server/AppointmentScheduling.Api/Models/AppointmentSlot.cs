@@ -12,5 +12,5 @@ public class AppointmentSlot
 
     public AvailabilitySession AvailabilitySession { get; set; } = null!;
 
-    public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
+    public ICollection<Booking> Bookings { get; } = new List<Booking>();
 }

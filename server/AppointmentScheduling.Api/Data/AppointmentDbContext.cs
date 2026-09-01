@@ -1,10 +1,16 @@
 using AppointmentScheduling.Api.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace AppointmentScheduling.Api.Data;
 
 public class AppointmentDbContext : DbContext
 {
+    private static readonly ValueConverter<DateTime, DateTime>
+        UtcDateTimeConverter = new(
+            value => value.ToUniversalTime(),
+            value => DateTime.SpecifyKind(value, DateTimeKind.Utc));
+
     public AppointmentDbContext(
         DbContextOptions<AppointmentDbContext> options)
         : base(options)
@@ -73,9 +79,11 @@ public class AppointmentDbContext : DbContext
             entity.HasKey(session => session.AvailabilitySessionId);
 
             entity.Property(session => session.StartsAtUtc)
+                .HasConversion(UtcDateTimeConverter)
                 .IsRequired();
 
             entity.Property(session => session.EndsAtUtc)
+                .HasConversion(UtcDateTimeConverter)
                 .IsRequired();
 
             entity.Property(session => session.SlotDurationMinutes)
@@ -108,9 +116,11 @@ public class AppointmentDbContext : DbContext
             entity.HasKey(slot => slot.AppointmentSlotId);
 
             entity.Property(slot => slot.StartsAtUtc)
+                .HasConversion(UtcDateTimeConverter)
                 .IsRequired();
 
             entity.Property(slot => slot.EndsAtUtc)
+                .HasConversion(UtcDateTimeConverter)
                 .IsRequired();
 
             entity.HasOne(slot => slot.AvailabilitySession)
@@ -138,9 +148,11 @@ public class AppointmentDbContext : DbContext
             entity.HasKey(period => period.UnavailablePeriodId);
 
             entity.Property(period => period.StartsAtUtc)
+                .HasConversion(UtcDateTimeConverter)
                 .IsRequired();
 
             entity.Property(period => period.EndsAtUtc)
+                .HasConversion(UtcDateTimeConverter)
                 .IsRequired();
 
             entity.HasOne(period => period.Clinician)
@@ -185,7 +197,11 @@ public class AppointmentDbContext : DbContext
                 .IsRequired();
 
             entity.Property(booking => booking.BookedAtUtc)
+                .HasConversion(UtcDateTimeConverter)
                 .IsRequired();
+
+            entity.Property(booking => booking.CancelledAtUtc)
+                .HasConversion(UtcDateTimeConverter);
 
             entity.HasOne(booking => booking.AppointmentSlot)
                 .WithMany(slot => slot.Bookings)

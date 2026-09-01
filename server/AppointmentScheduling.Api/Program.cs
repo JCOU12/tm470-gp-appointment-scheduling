@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddProblemDetails();
 
 builder.Services.AddDbContext<AppointmentDbContext>(options =>
     options.UseSqlite(
@@ -12,8 +13,8 @@ builder.Services.AddDbContext<AppointmentDbContext>(options =>
         ?? throw new InvalidOperationException(
             "Connection string 'AppointmentDatabase' was not found.")));
 
-builder.Services.AddSingleton<AppointmentSlotGenerator>();
-builder.Services.AddSingleton<BookingReferenceGenerator>();
+builder.Services.AddTransient<AppointmentSlotGenerator>();
+builder.Services.AddTransient<BookingReferenceGenerator>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<AvailabilitySessionService>();
 builder.Services.AddScoped<BookingService>();
@@ -51,9 +52,13 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler();
+    app.UseHttpsRedirection();
+}
 
-app.UseAuthorization();
+app.UseStatusCodePages();
 
 app.MapControllers();
 

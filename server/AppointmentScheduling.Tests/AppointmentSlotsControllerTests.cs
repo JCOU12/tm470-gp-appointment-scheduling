@@ -148,7 +148,8 @@ public sealed class AppointmentSlotsControllerTests
             toUtc: null,
             CancellationToken.None);
 
-        var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+        var badRequest = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(StatusCodes.Status400BadRequest, badRequest.StatusCode);
         var problem = Assert.IsType<ProblemDetails>(badRequest.Value);
         Assert.Equal(StatusCodes.Status400BadRequest, problem.Status);
         Assert.Contains("fromUtc must be UTC", problem.Detail);
@@ -166,7 +167,8 @@ public sealed class AppointmentSlotsControllerTests
             toUtc: UtcDateTime(8, 59),
             CancellationToken.None);
 
-        var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+        var badRequest = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(StatusCodes.Status400BadRequest, badRequest.StatusCode);
         var problem = Assert.IsType<ProblemDetails>(badRequest.Value);
         Assert.Equal(StatusCodes.Status400BadRequest, problem.Status);
         Assert.Contains("later than", problem.Detail);

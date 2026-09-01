@@ -232,7 +232,7 @@ public sealed class BookingService
         if (!BookingReferenceGenerator.IsValid(normalisedReference))
         {
             throw new BookingValidationException(
-                $"BookingReference must use the format {BookingReferenceGenerator.Prefix} followed by {BookingReferenceGenerator.RandomCharacterCount} letters or numbers.");
+                $"BookingReference must use the format {BookingReferenceGenerator.Prefix} followed by {BookingReferenceGenerator.RandomCharacterCount} letters or numbers, excluding 0, 1, I and O.");
         }
 
         return normalisedReference;
